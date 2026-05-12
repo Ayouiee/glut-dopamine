@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <title>GLUT - FINAL ARCHIVE</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #000; font-family: "Times New Roman", serif; overflow-x: hidden; }
+
+        /* ── 비디오 배경 고정 ── */
+        #bg-video {
+            position: fixed;
+            top: 0; left: 0;
+            min-width: 100%; min-height: 100%;
+            z-index: -1;
+            object-fit: cover;
+        }
+
+        /* ── 헤더 고정 (네비만, z-index 높게) ── */
+        #top-interface {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            z-index: 9999;
+            background: transparent;
+        }
+        #header-wrapper { position: relative; width: 100%; }
+        #header-img { width: 100%; height: auto; display: block; }
+
+        .fake-btn {
+            position: absolute;
+            top: 50%; transform: translateY(-50%);
+            width: 40px; height: 40px;
+            cursor: pointer;
+            background: transparent;
+        }
+        #fake-back-btn    { left: 15px; }
+        #fake-refresh-btn { left: 60px; }
+
+        #nav-bar {
+            display: flex;
+            gap: 8px;
+            padding: 8px 0 6px 16px;
+        }
+        .nav-link {
+            color: blue;
+            text-decoration: underline;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: "Times New Roman", serif;
+            background: #fff;
+            padding: 2px 6px;
+            display: inline;
+        }
+        .nav-link:hover { color: red; }
+
+        /* ── 도파민 레이어 (설명 텍스트 위로 덮음) ── */
+        #dopamine-layer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 600;   /* 설명텍스트(z:50)보다 위, 네비(9999)보다 아래 */
+        }
+        .spawned-image {
+            position: absolute;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+        }
+
+        /* ── 스크롤 영역 ── */
+        #scroll-area {
+            position: relative;
+            z-index: 5;
+            min-height: 100vh;
+        }
+
+        /* ── 설명 텍스트 블록 (스크롤 영역 안, 도파민에 가려짐) ── */
+        #desc-block {
+            position: relative;
+            z-index: 50;
+            display: block;
+            line-height: 1.4;
+            padding: 12px 0 8px 16px;
+        }
+        .glut-link {
+            color: blue;
+            text-decoration: underline;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: "Times New Roman", serif;
+            background: #fff;
+            padding: 1px 4px;
+            display: inline;
+        }
+        .glut-link:hover { color: red; }
+        .desc-line {
+            display: inline;
+            background: #fff;
+            color: #000;
+            font-family: "Times New Roman", serif;
+            font-size: 13px;
+            padding: 1px 4px;
+            line-height: 1.4;
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
+        }
+
+        /* ── refresh me 무한 배경 ── */
+        #bg-text {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0.8;          /* 비디오 위, 콘텐츠 아래 */
+            pointer-events: none;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0.5;
+        }
+        #bg-text span {
+            display: block;
+            width: 100%;
+            text-align: center;
+            font-size: 12vw;
+            font-weight: 100;
+            color: rgb(255, 255, 255);
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
+            font-family: "Times New Roman", serif;
+            letter-spacing: -0.01em;
+            line-height: 1.1;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        /* ── 그리드 ── */
+        #grid {
+            padding: 4px 16px 80px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .card {
+            display: block;
+            position: relative;
+            cursor: pointer;
+        }
+        .card img {
+            display: block;
+            height: auto;
+            max-width: 90vw;
+            border-radius: 2px;
+        }
+        .card-title {
+            color: #0000ff;
+            font-size: 13px;
+            padding: 2px 6px;
+            font-family: "Times New Roman", serif;
+            cursor: pointer;
+            display: inline-block;
+            background: #fff;
+            text-decoration: underline;
+            margin: 0;
+        }
+        .card-title:hover { color: red; }
+
+        /* 메타 팝업 - 이미지 오른쪽에 표시 */
+        .meta-popup {
+            display: none;
+            position: absolute;
+            left: calc(100% + 10px);
+            top: 0;
+            background: #fff;
+            color: #0000ff;
+            font-family: "Times New Roman", serif;
+            font-size: 12px;
+            line-height: 1.8;
+            padding: 10px 14px;
+            z-index: 800;
+            min-width: 200px;
+            max-width: 300px;
+            white-space: pre-wrap;
+            border: 1px solid #ffffff;
+        }
+        .card.open .meta-popup { display: block; }
+
+        /* ── 로딩 스피너 ── */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+        }
+        .spinner {
+            width: 28px; height: 28px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── 캡처 로고 ── */
+        #capture-logo {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 25vw;
+            font-weight: 900;
+            z-index: 10002;
+            letter-spacing: -0.1em;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<video autoplay muted loop id="bg-video">
+    <source src="bg.mp4" type="video/mp4">
+</video>
+
+<div id="loading-overlay"><div class="spinner"></div></div>
+<div id="capture-logo">GLUT</div>
+<div id="dopamine-layer"></div>
+
+<!-- 고정 헤더: 네비만 -->
+<div id="top-interface">
+    <div id="header-wrapper">
+        <img src="headerimage.jpg" id="header-img" alt="header">
+        <div id="fake-back-btn"    class="fake-btn"></div>
+        <div id="fake-refresh-btn" class="fake-btn"></div>
+    </div>
+    <div id="nav-bar">
+        <a href="index2.html"            class="nav-link">Intro</a>
+        <a onclick="saveArchive()"      class="nav-link" style="cursor:pointer;">Save Archive</a>
+        <a href="https://www.instagram.com/ayouiee/" target="_blank" class="nav-link">Instagram</a>
+    </div>
+</div>
+
+<!-- 스크롤 영역 -->
+<div id="scroll-area">
+
+    <!-- 설명 텍스트: 스크롤 영역 안에, 도파민에 가려짐 -->
+    <div id="desc-block">
+        <span class="desc-line"><a href="https://www.wordreference.com/enko/glut" target="_blank" class="glut-link">Glut</a>: The Architecture of Digital Dopamine</span><br>
+        <span class="desc-line">프로젝트 '<a href="https://www.are.na/chon-a-young/channels" target="_blank" class="glut-link">Glut</a>'은 비난하면서도 다음 화를 클릭하고,</span><br>
+        <span class="desc-line">지치면서도 숏츠를 멈추지 못하는 현대인의 지독한 역설에서</span><br>
+        <span class="desc-line">시작된 인터랙티브 아카이브다. <a href="https://www.wordreference.com/enko/glut" target="_blank" class="glut-link">Glut</a>은 우리가 '중독'이라</span><br>
+        <span class="desc-line">치부해온 현상이 사실은 자막의 색상, 사운드의 파동, 찰나의</span><br>
+        <span class="desc-line">편집 리듬 같은 치밀하게 설계된 '도파민 조형 언어'에 의한</span><br>
+        <span class="desc-line">구조적 결과물임을 해부한다. 사용자가 새로고침을 반복할수록</span><br>
+        <span class="desc-line">화면에는 전 세계 예능 콘텐츠에서 추출된 시각적 파편들이</span><br>
+        <span class="desc-line">무한히 증식하며,종국에는 너무 많아서 오히려 아무것도 보이지</span><br>
+        <span class="desc-line">않는 (<a href="https://www.wordreference.com/enko/glut" target="_blank" class="glut-link">Glut</a>) 혼돈의 상태에 이르게 한다. 사용자는 이 통제 불능의</span><br>
+        <span class="desc-line">도파민 덩어리를 직접 아카이빙함으로써 자극의 홍수 속에</span><br>
+        <span class="desc-line">놓인 자신의 위치를 확인하고, 시선을 점유하기 위해 설계된 </span><br>
+        <span class="desc-line">미디어의 조형적 메커니즘을 감각적으로 목격하게 된다.</span>
+    </div>
+
+    <div id="bg-text"></div>
+    <div id="grid"></div>
+</div>
+
+<script>
+    // CSV: export 방식 먼저, 실패시 pub 방식 시도
+    const CSV_URLS = [
+        "https://docs.google.com/spreadsheets/d/1W97_oIqb3qeJxLJjNvOJeq-429l3UnqWoKIXI2RdfPA/export?format=csv&gid=1311090862",
+        "https://docs.google.com/spreadsheets/d/1W97_oIqb3qeJxLJjNvOJeq-429l3UnqWoKIXI2RdfPA/pub?gid=1311090862&single=true&output=csv"
+    ];
+
+    function adjustPadding() {
+        const h = document.getElementById('top-interface').offsetHeight;
+        document.getElementById('scroll-area').style.paddingTop = h + 'px';
+    }
+    window.addEventListener('resize', adjustPadding);
+
+    function parseCSVLine(line) {
+        const r = []; let c = "", q = false;
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') q = !q;
+            else if (ch === ',' && !q) { r.push(c); c = ""; }
+            else c += ch;
+        }
+        r.push(c); return r;
+    }
+    function parseCSV(text) {
+        const lines = text.trim().split("\n");
+        const headers = parseCSVLine(lines[0]);
+        return lines.slice(1).map(line => {
+            const vals = parseCSVLine(line), obj = {};
+            headers.forEach((h, i) => obj[h.trim()] = (vals[i] || "").trim());
+            return obj;
+        });
+    }
+
+    // 이미지 너비: 기존 대비 1.4배
+    const widths = [400, 450, 500, 550, 600, 480, 520, 560, 420, 640];
+
+    function makeCard(row, imgIndex) {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const img = document.createElement("img");
+        img.src = `image${imgIndex}.jpg`;
+        img.alt = row["제목"] || "";
+        img.onerror = function() { this.style.display = "none"; };
+        img.style.width = widths[Math.floor(Math.random() * widths.length)] + "px";
+
+        const title = document.createElement("p");
+        title.className = "card-title";
+        title.textContent = row["제목"] || "";
+        title.style.margin = "0";
+
+        // 메타 팝업 (이미지 오른쪽)
+        const popup = document.createElement("div");
+        popup.className = "meta-popup";
+        popup.textContent = [
+            row["제목"]                ? "제목: "     + row["제목"] : "",
+            row["장르/매체"]            ? "장르/매체: " + row["장르/매체"] : "",
+            row["국가"]                ? "국가: "     + row["국가"] : "",
+            row["제작사·방송사"]         ? "제작사: "   + row["제작사·방송사"] : "",
+            row["방영년도"]             ? "방영년도: "  + row["방영년도"] : "",
+            row["등급"]                ? "등급: "     + row["등급"] : "",
+            row["핵심 도파민 조형 언어"]  ? "조형언어: "  + row["핵심 도파민 조형 언어"] : "",
+            row["이미지화 레이어"]       ? "이미지화: "  + row["이미지화 레이어"] : "",
+        ].filter(Boolean).join("\n");
+
+        title.addEventListener("click", e => {
+            e.stopPropagation();
+            const isOpen = card.classList.contains("open");
+            document.querySelectorAll(".card.open").forEach(c => c.classList.remove("open"));
+            if (!isOpen) card.classList.add("open");
+        });
+
+        card.appendChild(img);
+        card.appendChild(title);
+        card.appendChild(popup);
+        return card;
+    }
+
+    function loadGrid() {
+        const tryFetch = (urls, idx) => {
+            if (idx >= urls.length) return Promise.reject(new Error('all urls failed'));
+            return fetch(urls[idx])
+                .then(r => { if (!r.ok) throw new Error('not ok'); return r.text(); })
+                .catch(() => tryFetch(urls, idx + 1));
+        };
+        tryFetch(CSV_URLS, 0)
+            .then(text => {
+                let rows = parseCSV(text);
+                const grid = document.getElementById("grid");
+                grid.innerHTML = "";
+
+                // 마지막 5개 제외
+                if (rows.length > 5) rows = rows.slice(0, -5);
+
+                let imgIndex = 1;
+                rows.forEach(row => {
+                    if ((row["선정 여부"] || "").trim().toUpperCase() !== "O") return;
+                    grid.appendChild(makeCard(row, imgIndex));
+                    imgIndex++;
+                });
+
+                // fallback
+                if (imgIndex === 1) {
+                    rows.forEach((row, i) => {
+                        grid.appendChild(makeCard(row, i + 1));
+                    });
+                }
+            })
+            .catch(err => {
+                console.error("CSV 실패:", err);
+                const grid = document.getElementById("grid");
+                for (let i = 1; i <= 45; i++) {
+                    const card = document.createElement("div");
+                    card.className = "card";
+                    const img = document.createElement("img");
+                    img.src = `image${i}.jpg`;
+                    img.onerror = function() { this.style.display = "none"; };
+                    img.style.width = widths[i % widths.length] + "px";
+                    card.appendChild(img);
+                    grid.appendChild(card);
+                }
+            });
+    }
+
+    // 도파민 스폰
+    const extensions = ['jpg','png','gif','JPG','PNG','GIF'];
+
+    function spawnCascade(count, groupIndex, styleType) {
+        let startX = Math.random() * window.innerWidth;
+        let startY = styleType === 'explosion'
+            ? Math.random() * window.innerHeight
+            : Math.random() * (window.innerHeight * 0.4);
+        let vX = 0, vY = 0;
+        if      (styleType === 'stream')  { vX = Math.random()*2-1;   vY = Math.random()*2+2; }
+        else if (styleType === 'spread')  { vX = Math.random()*12-6;  vY = Math.random()*4-2; }
+
+        const bombNum = Math.floor(Math.random() * 40) + 1;
+        const baseSrc = `bomb${bombNum}`;
+        const layer   = document.getElementById('dopamine-layer');
+        const cnt     = styleType === 'explosion' ? 1 : count;
+
+        for (let i = 0; i < cnt; i++) {
+            setTimeout(() => {
+                const img = document.createElement('img');
+                img.className = 'spawned-image';
+                let extIdx = 0;
+                img.src = `${baseSrc}.${extensions[extIdx]}`;
+                img.onerror = function() {
+                    extIdx++;
+                    if (extIdx < extensions.length) this.src = `${baseSrc}.${extensions[extIdx]}`;
+                    else this.remove();
+                };
+                if (styleType !== 'explosion') {
+                    startX += vX*15 + (Math.random()*10-5);
+                    startY += vY*15 + (Math.random()*8-4);
+                }
+                img.style.left  = startX + 'px';
+                img.style.top   = startY + 'px';
+                img.style.width = styleType === 'explosion'
+                    ? (Math.random()*400+150)+'px' : '240px';
+                img.style.transform = `translate(-50%,-50%) rotate(${Math.random()*10-5}deg)`;
+                img.style.zIndex    = 100 + groupIndex*100 + i;
+                layer.appendChild(img);
+                saveToSession(img.style.left, img.style.top, img.src, img.style.width, img.style.transform);
+            }, i * 15);
+        }
+    }
+
+    function reelsRefresh() {
+        const overlay = document.getElementById('loading-overlay');
+        overlay.style.display = 'flex';
+        const waitTime = Math.random() * 3000 + 500;
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            const total = Math.min(Math.floor(Math.pow(waitTime/150, 2)), 100);
+            const gc    = Math.floor(Math.random()*3) + 3;
+            for (let g = 0; g < gc; g++) {
+                const rand  = Math.random();
+                const style = rand < 0.4 ? 'stream' : (rand < 0.7 ? 'spread' : 'explosion');
+                spawnCascade(style === 'explosion' ? 1 : Math.floor(total/gc), g, style);
+            }
+        }, waitTime);
+    }
+
+    function resetDopamine() {
+        document.getElementById('dopamine-layer').innerHTML = '';
+        sessionStorage.removeItem('glut_data');
+    }
+
+    // Save Archive: 현재 뷰포트(화면)만 캡처
+    function saveArchive() {
+        const logo = document.getElementById('capture-logo');
+        logo.style.color = ['#00F','#F00','#0F0','#F0F','#FF0','#0FF'][Math.floor(Math.random()*6)];
+        logo.style.display = 'block';
+
+        setTimeout(() => {
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const sx = window.scrollX;
+            const sy = window.scrollY;
+
+            html2canvas(document.body, {
+                useCORS: true,
+                backgroundColor: "#000",
+                scale: 2,
+                width: vw,
+                height: vh,
+                x: sx,
+                y: sy,
+                windowWidth: vw,
+                windowHeight: vh,
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `GLUT_${Date.now()}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+                logo.style.display = 'none';
+            });
+        }, 100);
+    }
+
+    function saveToSession(x, y, s, w, r) {
+        let d = JSON.parse(sessionStorage.getItem('glut_data') || '[]');
+        d.push({ x, y, s, w, r });
+        sessionStorage.setItem('glut_data', JSON.stringify(d));
+    }
+    function restoreSession() {
+        const saved = JSON.parse(sessionStorage.getItem('glut_data') || '[]');
+        const layer = document.getElementById('dopamine-layer');
+        saved.forEach(d => {
+            const img = document.createElement('img');
+            img.src = d.s; img.className = 'spawned-image';
+            img.style.left = d.x; img.style.top = d.y;
+            img.style.width = d.w; img.style.transform = d.r;
+            img.style.zIndex = 50;
+            layer.appendChild(img);
+        });
+    }
+
+    function buildBgText() {
+        const el = document.getElementById('bg-text');
+        // 화면 높이 기준으로 몇 줄 필요한지 계산 (12vw 기준 약 13% 높이)
+        const lineH = window.innerWidth * 0.12 * 1.1;
+        const lines = Math.ceil(window.innerHeight / lineH) + 2;
+        el.innerHTML = '';
+        for (let i = 0; i < lines; i++) {
+            const s = document.createElement('span');
+            s.textContent = 'refresh me';
+            el.appendChild(s);
+        }
+    }
+    window.addEventListener('resize', buildBgText);
+
+    window.onload = () => {
+        buildBgText();
+        adjustPadding();
+        loadGrid();
+        restoreSession();
+    };
+
+    document.getElementById('fake-refresh-btn').onclick = reelsRefresh;
+    document.getElementById('fake-back-btn').onclick    = resetDopamine;
+</script>
+</body>
+</html>
