@@ -1,26 +1,207 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>GLUT - Intro</title>
-    <style>
-        body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
-        .glut-link {
-            font-family: "Times New Roman", serif;
-            font-size: 15vw;
-            font-weight: 0;
-            color: blue;
-            text-decoration: underline 5pt solid;
-            text-underline-offset: 15px;
-            text-underline-position: center;
-            letter-spacing: -0.05em; /* 극단적인 자간 */
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        .glut-link:hover { color: red; letter-spacing: 0.5em; }
-    </style>
+<meta charset="UTF-8">
+<title>GLUT</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #ffffff;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+#noise-link {
+  display: block;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 10;
+  font-family: "Times New Roman", serif;
+  font-size: 36px;
+  line-height: 1.35;
+  color: #0000EE;
+  padding: 6px;
+  overflow: hidden;
+  opacity: 0.85;
+  text-decoration: none;
+  cursor: crosshair;
+}
+
+#noise-link:hover { color: #551A8B; }
+#noise-link:active { color: #ff0000; }
+
+.line {
+  display: block;
+  white-space: pre;
+  overflow: hidden;
+}
+
+.line.left   { text-align: left; }
+.line.center { text-align: center; }
+.line.right  { text-align: right; }
+
+@keyframes flicker {
+  0%, 100% { opacity: 0.85; }
+  92%  { opacity: 0.85; }
+  93%  { opacity: 0.2;  }
+  94%  { opacity: 0.85; }
+  96%  { opacity: 0.1;  }
+  97%  { opacity: 0.85; }
+}
+
+@keyframes colorshift {
+  0%,  100% { color: #0000EE; }
+  20%       { color: #0000EE; }
+  21%       { color: #551A8B; }
+  22%       { color: #0000EE; }
+  50%       { color: #0000EE; }
+  51%       { color: #ff0000; }
+  52%       { color: #0000EE; }
+}
+
+#noise-link { animation: flicker 3s infinite, colorshift 7s infinite; }
+</style>
 </head>
 <body>
-    <a href="main.html" class="glut-link">Glut</a>
+
+<a id="noise-link" href="html0.html"></a>
+
+<script>
+const chars = [
+  '\\','/','-','=','|','<','>','[',']','{','}','(',')','!',
+  ':',';','.',',','`','~','@','#','$','%','^','&','*','_','+',
+  '0','1','l','I','o','O','2','3','4','5','6','7','8','9',
+];
+
+const patterns = [
+  '=======','-------','|||||||','///////',
+  '--------->','<---------','========>','<========',
+  '[[[[[[]]]]]','{{{{{}}}}}','((((()))))','[[[[]]]]',
+  'o=o=o=o=o','l|l|l|l|l','0o0o0o0o','1l1l1l1l',
+  '|=|=|=|=','/\\/\\/\\','\\/\\/\\/',
+  '<<<<<>>>>>','[][][][][]','{}{}{}{}}',
+  ':::::::::',';;;;;;;;;','.........','~~~~~~~~~',
+  '--||--||--','||--||--||','===\\\\===','///===///',
+  '|||||||||||||','_____________',
+  'o0o0o0o0o0','0O0O0O0O',
+  '>>|<<>>|<<','<<|>><<|>>',
+  '-.-.-.-.-',':;:;:;:;:','`~`~`~`~`',
+  '[[=]][[=]]','/--\\\\--/','>=>=>=>=','=>=>=>=>',
+  '====\\\\====','////====////',
+  '[==][==][==]','(--)(--)(--)',
+  '|||===|||===','===|||===|||',
+];
+
+const aligns = ['left','left','left','center','center','right'];
+
+function rand(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function generateLine(cols) {
+  let line = '';
+  let col = 0;
+  while (col < cols) {
+    const t = Math.random();
+    if (t < 0.22) {
+      line += rand(chars);
+      col += 1;
+    } else if (t < 0.48) {
+      const p = rand(patterns);
+      line += p;
+      col += p.length;
+    } else if (t < 0.58) {
+      const s = Math.floor(Math.random() * 6) + 1;
+      line += ' '.repeat(s);
+      col += s;
+    } else if (t < 0.68) {
+      const n = Math.floor(Math.random() * 20) + 1;
+      const token = '[' + n + ']';
+      line += token;
+      col += token.length;
+    } else if (t < 0.78) {
+      const arrows = ['------->', '<-------', '========>', '<========',
+                      '--|>','<|--','-->>','<<--','=>>>=','=<<=',
+                      '------>|','|<------','==========>'];
+      const a = rand(arrows);
+      line += a;
+      col += a.length;
+    } else if (t < 0.90) {
+      const c = rand(['=','-','|','/','\\',' ','.',':','~','^','_']);
+      const times = Math.floor(Math.random() * 14) + 2;
+      line += c.repeat(times);
+      col += times;
+    } else {
+      const open  = rand(['[','(','{',' <','[[','((','{{'  ]);
+      const close = rand([']',')','}','> ',']]','))','}}'  ]);
+      const depth = Math.floor(Math.random() * 5) + 1;
+      const token = open.repeat(depth) + close.repeat(depth);
+      line += token;
+      col += token.length;
+    }
+  }
+  return line.substring(0, cols * 2); // 넉넉하게
+}
+
+function buildLines() {
+  const fontSize = 15;
+  const lineH = fontSize * 1.35;
+  const rows = Math.ceil(window.innerHeight / lineH) + 2;
+  const cols = Math.ceil(window.innerWidth / (fontSize * 0.6));
+
+  const link = document.getElementById('noise-link');
+  link.innerHTML = '';
+
+  const lineEls = [];
+  const lineTexts = [];
+  const lineAligns = [];
+
+  for (let r = 0; r < rows; r++) {
+    const align = rand(aligns);
+    const text = generateLine(cols);
+    const span = document.createElement('span');
+    span.className = 'line ' + align;
+    span.textContent = text;
+    link.appendChild(span);
+    lineEls.push(span);
+    lineTexts.push(text);
+    lineAligns.push(align);
+  }
+
+  return { lineEls, lineTexts, lineAligns, cols };
+}
+
+let state = buildLines();
+
+function update() {
+  const n = Math.floor(Math.random() * 6) + 1;
+  for (let i = 0; i < n; i++) {
+    const idx = Math.floor(Math.random() * state.lineEls.length);
+    const newText = generateLine(state.cols);
+    state.lineTexts[idx] = newText;
+    state.lineEls[idx].textContent = newText;
+
+    // 가끔 정렬도 바꿔줌
+    if (Math.random() < 0.15) {
+      const newAlign = rand(aligns);
+      state.lineEls[idx].className = 'line ' + newAlign;
+      state.lineAligns[idx] = newAlign;
+    }
+  }
+}
+
+function schedule() {
+  const delay = Math.random() * 120 + 40;
+  setTimeout(() => { update(); schedule(); }, delay);
+}
+schedule();
+
+window.addEventListener('resize', () => {
+  state = buildLines();
+});
+</script>
 </body>
 </html>
