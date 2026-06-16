@@ -1,1 +1,827 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>도파민 — 위키백과, 우리 모두의 백과사전</title>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" crossorigin="anonymous"></script>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
+body {
+  background: #fff;
+  color: #202122;
+  font-family: -apple-system, 'Linux Libertine', Georgia, Times, serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── 상단 네비 (GLUT 공통) ── */
+#glut-nav {
+  position: fixed;
+  top: 0; right: 0;
+  z-index: 99999;
+  display: flex;
+  gap: 12px;
+  padding: 4px 14px;
+  font-size: 12px;
+  font-family: 'Times New Roman', serif;
+  background: rgba(255,255,255,0.95);
+  border-bottom: 1px solid #eee;
+  width: 100%;
+  justify-content: flex-end;
+}
+#glut-nav a { color: #00f; text-decoration: none; }
+#glut-nav a:hover { text-decoration: underline; }
+
+/* ── 위키백과 상단 바 ── */
+#wiki-topbar {
+  background: #fff;
+  border-bottom: 1px solid #a2a9b1;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 26px;
+}
+.wiki-top-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.wiki-hamburger { font-size: 18px; cursor: pointer; color: #54595d; }
+.wiki-logo-wrap { display: flex; align-items: center; gap: 8px; }
+.wiki-logo-img {
+  width: 50px; height: 50px;
+  background: #eee;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.wiki-logo-text-wrap { line-height: 1.2; }
+.wiki-logo-main { font-family: 'Linux Libertine', Georgia, serif; font-size: 20px; font-weight: normal; }
+.wiki-logo-sub { font-size: 11px; color: #54595d; }
+.wiki-search-wrap { display: flex; gap: 0; }
+.wiki-search-wrap input {
+  border: 1px solid #a2a9b1;
+  border-right: none;
+  padding: 6px 12px;
+  font-size: 14px;
+  width: 280px;
+  outline: none;
+  color: #202122;
+}
+.wiki-search-wrap button {
+  border: 1px solid #a2a9b1;
+  background: #f8f9fa;
+  padding: 6px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #202122;
+}
+.wiki-top-right {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+}
+.wiki-top-right a { color: #3366cc; text-decoration: none; }
+.wiki-top-right a:hover { text-decoration: underline; }
+
+/* ── 알림 배너 ── */
+#wiki-banner {
+  background: #f8f9fa;
+  border-bottom: 1px solid #a2a9b1;
+  padding: 8px 20px;
+  font-size: 13px;
+  color: #202122;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.banner-inner { display: flex; align-items: center; gap: 8px; }
+.banner-close { cursor: pointer; color: #54595d; font-size: 16px; }
+
+/* ── 메인 레이아웃 ── */
+#wiki-body {
+  display: flex;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ── 사이드바 ── */
+#wiki-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  padding: 16px 8px 16px 16px;
+  font-size: 13px;
+  border-right: 1px solid #a2a9b1;
+  min-height: calc(100vh - 120px);
+}
+.sb-section { margin-bottom: 14px; }
+.sb-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: #54595d;
+  margin-bottom: 4px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid #a2a9b1;
+}
+.sb-link { display: block; color: #3366cc; text-decoration: none; font-size: 12.5px; padding: 1px 0 1px 6px; }
+.sb-link:hover { text-decoration: underline; }
+.sb-link.indent { padding-left: 18px; }
+.sb-expand { color: #54595d; font-size: 11px; cursor: pointer; }
+
+/* ── 콘텐츠 영역 ── */
+#wiki-content {
+  flex: 1;
+  padding: 16px 24px 60px;
+  min-width: 0;
+}
+
+/* 페이지 타이틀 */
+#firstHeading {
+  font-family: 'Linux Libertine', Georgia, serif;
+  font-size: 28px;
+  font-weight: normal;
+  border-bottom: 1px solid #a2a9b1;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+  color: #202122;
+}
+
+/* 탭 */
+.wiki-tabs-wrap {
+  border-bottom: 1px solid #a2a9b1;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+}
+.wtab {
+  padding: 6px 14px;
+  font-size: 13px;
+  color: #3366cc;
+  text-decoration: none;
+  border: 1px solid #a2a9b1;
+  border-bottom: none;
+  margin-right: 2px;
+  margin-bottom: -1px;
+  background: #f8f9fa;
+  cursor: pointer;
+}
+.wtab.active { background: #fff; color: #202122; border-bottom: 1px solid #fff; }
+.wtab:hover { background: #fff; }
+.wtab-right {
+  margin-left: auto;
+  display: flex;
+  gap: 0;
+}
+
+/* 본문 링크 */
+#wiki-content a { color: #3366cc; text-decoration: none; }
+#wiki-content a:hover { text-decoration: underline; }
+
+/* 인포박스 */
+.infobox {
+  float: right;
+  clear: right;
+  margin: 0 0 16px 20px;
+  border: 1px solid #a2a9b1;
+  background: #f8f9fa;
+  font-size: 12.5px;
+  width: 280px;
+}
+.infobox-title {
+  background: #cee0f2;
+  text-align: center;
+  padding: 8px;
+  font-weight: bold;
+  font-size: 14px;
+}
+.infobox-img {
+  text-align: center;
+  padding: 10px;
+  background: #fff;
+  border-bottom: 1px solid #a2a9b1;
+}
+.infobox-img img { max-width: 200px; }
+.infobox-img-placeholder {
+  width: 200px; height: 140px;
+  background: #eee;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #aaa;
+}
+.infobox table { width: 100%; border-collapse: collapse; }
+.infobox td { padding: 4px 8px; border-top: 1px solid #a2a9b1; vertical-align: top; }
+.infobox td:first-child {
+  background: #f8f9fa;
+  font-weight: bold;
+  white-space: nowrap;
+  color: #202122;
+  width: 80px;
+}
+.infobox .section-head td {
+  background: #cee0f2;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* 알림 박스 */
+.hatnote {
+  padding: 4px 0 4px 20px;
+  font-style: italic;
+  font-size: 13px;
+  color: #54595d;
+  margin-bottom: 8px;
+}
+.notice-box {
+  border: 1px solid #a2a9b1;
+  background: #f8f9fa;
+  padding: 8px 12px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* 목차 */
+.toc {
+  background: #f8f9fa;
+  border: 1px solid #a2a9b1;
+  padding: 10px 16px;
+  display: inline-block;
+  min-width: 220px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+.toc-title {
+  font-weight: bold;
+  margin-bottom: 6px;
+  text-align: center;
+}
+.toc ol { padding-left: 20px; }
+.toc li { margin: 2px 0; }
+.toc a { color: #3366cc; text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+
+/* 본문 */
+p { margin-bottom: 12px; }
+h2 {
+  font-family: 'Linux Libertine', Georgia, serif;
+  font-size: 22px;
+  font-weight: normal;
+  border-bottom: 1px solid #a2a9b1;
+  padding-bottom: 4px;
+  margin: 20px 0 10px;
+}
+h3 {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 14px 0 6px;
+}
+.edit-link { font-size: 12px; color: #3366cc; margin-left: 8px; font-weight: normal; }
+
+/* 오른쪽 툴바 */
+#wiki-rightbar {
+  width: 120px;
+  flex-shrink: 0;
+  padding: 16px 12px;
+  font-size: 12px;
+  border-left: 1px solid #a2a9b1;
+}
+.rb-title { font-weight: bold; margin-bottom: 6px; color: #54595d; font-size: 11px; }
+.rb-item { margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+.rb-radio {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 2px solid #3366cc;
+  flex-shrink: 0;
+}
+.rb-radio.checked { background: #3366cc; }
+
+/* ── 핵심: 타이핑 오버레이 ── */
+#overlay-layer {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.ot {
+  position: absolute;
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  font-weight: 700;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 0;
+  opacity: 0;
+}
+.ot.typing {
+  animation: typeAnim var(--dur) steps(var(--steps), end) var(--delay) forwards;
+}
+@keyframes typeAnim {
+  0%   { opacity: 1; width: 0; }
+  100% { opacity: 1; width: var(--w); }
+}
+
+/* ★ 캡처 직전 강제 정지 및 강제 노출을 위한 클래스 세팅 */
+.ot.force-capture-show {
+  animation: none !important;
+  opacity: 1 !important;
+  width: var(--w) !important;
+}
+
+#scroll-hint {
+  position: fixed;
+  bottom: 16px; right: 16px;
+  font-size: 10px;
+  color: #aaa;
+  z-index: 9999;
+  font-family: 'Times New Roman', serif;
+  letter-spacing: 0.1em;
+  writing-mode: vertical-rl;
+}
+
+/* ── 프린트 전용 CSS ── */
+#print-snapshot { display: none; }
+#capture-logo {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 25vw;
+    font-weight: 900;
+    z-index: 10002;
+    letter-spacing: -0.1em;
+    pointer-events: none;
+    font-family: 'Times New Roman', serif;
+}
+@media print {
+    @page { size: landscape; margin: 0; }
+    html, body {
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    body > *:not(#print-snapshot) { display: none !important; }
+    #print-snapshot {
+        display: block !important;
+        position: fixed !important;
+        top: 0 !important; left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        object-fit: contain !important;
+        z-index: 999999 !important;
+    }
+}
+</style>
+</head>
+<body>
+
+<div id="capture-logo">GLUT</div>
+<div id="glut-nav">
+  <a href="html0.html">Home</a>
+  <a href="html1.html">Noise</a>
+  <a href="html2.html">Face</a>
+  <a href="html4.html">Archive</a>
+  <a href="javascript:saveArchive()" style="cursor:pointer;">Print</a>
+</div>
+
+<div id="overlay-layer"></div>
+<div id="scroll-hint">scroll ↓</div>
+
+<div id="wiki-topbar">
+  <div class="wiki-top-left">
+    <span class="wiki-hamburger">☰</span>
+    <div class="wiki-logo-wrap">
+      <div class="wiki-logo-img">🌐</div>
+      <div class="wiki-logo-text-wrap">
+        <div class="wiki-logo-main">위키백과</div>
+        <div class="wiki-logo-sub">우리 모두의 백과사전</div>
+      </div>
+    </div>
+  </div>
+  <div class="wiki-search-wrap">
+    <input type="text" placeholder="위키백과 검색" value="">
+    <button>검색</button>
+  </div>
+  <div class="wiki-top-right">
+    <a href="#">기부</a>
+    <a href="#">계정 만들기</a>
+    <a href="#">로그인</a>
+  </div>
+</div>
+
+<div id="wiki-banner">
+  <div class="banner-inner">
+    <span>🔊</span>
+    <span><a href="#">옛한글 문헌 전자화 프로젝트</a> 봉사자를 6월 24일까지 모집합니다.</span>
+  </div>
+  <span class="banner-close" onclick="this.parentElement.style.display='none'">×</span>
+</div>
+
+<div id="wiki-body">
+
+  <div id="wiki-sidebar">
+    <div class="sb-section">
+      <div class="sb-title">목차 <span class="sb-expand">[숨기기]</span></div>
+      <a class="sb-link" href="#s0">처음 위치</a>
+      <a class="sb-link indent" href="#s1">역사</a>
+      <a class="sb-link indent" href="#s2">생화학</a>
+      <a class="sb-link" href="#s3">기능</a>
+      <a class="sb-link indent" href="#s3-1">학습, 강화, 보상 행동</a>
+      <a class="sb-link indent" href="#s3-2">운동조절</a>
+      <a class="sb-link indent" href="#s3-3">인지와 전두엽</a>
+      <a class="sb-link" href="#s4">분포</a>
+      <a class="sb-link indent" href="#s4-1">중뇌변연계 경로</a>
+      <a class="sb-link indent" href="#s4-2">중뇌선조체 경로</a>
+      <a class="sb-link" href="#s5">작동 기전</a>
+      <a class="sb-link" href="#s6">질병, 증상, 약물치료</a>
+      <a class="sb-link indent" href="#s6-1">다발성 경화증</a>
+      <a class="sb-link indent" href="#s6-2">파킨슨병</a>
+      <a class="sb-link" href="#s7">참고 문헌</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">도구</div>
+      <a class="sb-link" href="#">문서 편집</a>
+      <a class="sb-link" href="#">역사 보기</a>
+      <a class="sb-link" href="#">토론</a>
+      <a class="sb-link" href="#">이동</a>
+      <a class="sb-link" href="#">위키데이터 항목</a>
+      <a class="sb-link" href="#">이 문서 인용하기</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">인쇄/내보내기</div>
+      <a class="sb-link" href="#">책 만들기</a>
+      <a class="sb-link" href="#">PDF로 다운로드</a>
+      <a class="sb-link" href="javascript:window.print()">인쇄용 판</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">다른 프로젝트</div>
+      <a class="sb-link" href="#">위키미디어 공용</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">다른 언어 <span style="color:#3366cc;cursor:pointer;">🔧</span></div>
+      <a class="sb-link" href="#">العربية</a>
+      <a class="sb-link" href="#">Català</a>
+      <a class="sb-link" href="#">Deutsch</a>
+      <a class="sb-link" href="#">English</a>
+      <a class="sb-link" href="#">Español</a>
+      <a class="sb-link" href="#">Français</a>
+      <a class="sb-link" href="#">Svenska</a>
+      <a class="sb-link" href="#">中文</a>
+      <a class="sb-link" href="#" style="color:#3366cc;">🔁 3 more</a>
+    </div>
+  </div>
+
+  <div id="wiki-content">
+
+    <div id="firstHeading" id="s0">도파민</div>
+
+    <div class="wiki-tabs-wrap">
+      <a class="wtab active" href="#">문서</a>
+      <a class="wtab" href="#">토론</a>
+      <div class="wtab-right">
+        <a class="wtab" href="#">읽기</a>
+        <a class="wtab" href="#">편집</a>
+        <a class="wtab" href="#">역사 보기</a>
+        <a class="wtab" href="#">도구 ▾</a>
+      </div>
+    </div>
+
+    <div class="hatnote">위키백과, 우리 모두의 백과사전.</div>
+
+    <div class="notice-box">
+      <span>🦋</span>
+      <span>이 문서는 유기 화합물 도파민(Dopamine)에 관한 것입니다. 노래에 대해서는 <a href="#">Dopamin</a> 문서를 참고하십시오.</span>
+    </div>
+
+    <div class="infobox">
+      <div class="infobox-title">도파민</div>
+      <div class="infobox-img">
+        <div class="infobox-img-placeholder">화학 구조식<br>HO·C₆H₃(OH)·CH₂CH₂NH₂</div>
+      </div>
+      <table>
+        <tr><td>체계적 명칭</td><td style="color:#3366cc;">(IUPAC 명명법)</td></tr>
+        <tr><td></td><td>4-(2-Aminoethyl)benzene-1,2-diol</td></tr>
+        <tr class="section-head"><td colspan="2">식별 정보</td></tr>
+        <tr><td>CAS 등록번호</td><td><a href="#">51-61-6</a> 62-31-7 🔗</td></tr>
+        <tr><td>ATC 코드</td><td>?</td></tr>
+        <tr><td>PubChem</td><td>681</td></tr>
+        <tr><td>드러그뱅크</td><td>DB00988</td></tr>
+        <tr><td>ChemSpider</td><td>661</td></tr>
+        <tr class="section-head"><td colspan="2">화학적 성질</td></tr>
+        <tr><td>화학식</td><td>C₈H₁₁NO₂</td></tr>
+        <tr><td>분자량</td><td>153.18</td></tr>
+        <tr><td>유의어</td><td>DA,<br>2-(3,4-Dihydroxyphenyl)ethylamine,<br>3,4-Dihydroxyphenethylamine,<br>3-Hydroxytyramine</td></tr>
+      </table>
+    </div>
+
+    <div class="toc">
+      <div class="toc-title">목차 [숨기기]</div>
+      <ol>
+        <li><a href="#s1">역사</a></li>
+        <li><a href="#s2">생화학</a></li>
+        <li><a href="#s3">기능</a>
+          <ol>
+            <li><a href="#s3-1">학습, 강화, 보상 행동</a></li>
+            <li><a href="#s3-2">운동조절</a></li>
+            <li><a href="#s3-3">인지와 전두엽</a></li>
+            <li><a href="#s3-4">오심 및 구토</a></li>
+          </ol>
+        </li>
+        <li><a href="#s4">분포</a></li>
+        <li><a href="#s5">작동 기전</a></li>
+        <li><a href="#s6">질병, 증상, 약물치료</a></li>
+        <li><a href="#s7">참고 문헌</a></li>
+      </ol>
+    </div>
+
+    <p><strong>도파민</strong>(영어: dopamine 또는 3,4-dihydroxyphenethylamine, C₈H₁₁NO₂)은 <a href="#">카테콜아민</a> 계열의 <a href="#">유기 화합물</a>로, 다양한 동물들의 중추 신경계에서 <a href="#">신경조절물질</a>과 <a href="#">호르몬</a>으로 작용한다. 신경전달물질로서 <a href="#">신경 세포</a>들 사이에 전달되며 지금까지 알려진 다섯 개의 <a href="#">도파민 수용체</a>(D1, D2, D3, D4, D5)와 그 변종을 활성화한다.</p>
+
+    <p>이 흑색질과 척추 피개부를 포함한 뇌의 여러 영역에서 합성된다. 호르몬으로써 <a href="#">시상하부</a>에서 주로 합성되는데, <a href="#">뇌하수체</a>의 전엽에서 <a href="#">프로락틴</a>의 분비를 억제하는 것이 주요 기능이다.</p>
+
+    <h2 id="s1">역사 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>도파민은 영국, 런던의 Wellcome 연구소에서 George Barger와 James Ewens에 의해 1910년에 합성되었다. 모노아민이기 때문에 도파민이라 불리게 되었다. 전구물질은 Barger – Ewens 합성으로 3,4–dihydroxyphenylalanine (levo-dopa)로 알려졌으며, 이후 1958년 Arvid Carlsson and Nils-Åke Hillarp가 스웨덴 국립 심장 연구소의 화학실에서 분리하였다.</p>
+
+    <p>Carlsson은 노르에피네프린과 에피네프린의 저구물질 뿐 아니라 신경전달물질이기도 하다는 것을 밝혀내었다. 도파민과 파킨슨병 사이의 상관관계를 최초로 입증하였으며, 이 성과로 2000년 노벨 생리의학상을 공동 수상하였다.</p>
+
+    <h2 id="s2">생화학 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>도파민은 <a href="#">티로신</a>으로부터 합성된다. 티로신은 <a href="#">페닐알라닌 수산화효소</a>에 의해 도파(DOPA)로 전환되고, 도파는 <a href="#">방향족 아미노산 탈카르복실화 효소</a>에 의해 도파민으로 변환된다.</p>
+
+    <h2 id="s3">기능 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>도파민은 여러 종류의 기능에 영향을 준다. 뇌의 <a href="#">보상회로</a>에서 분비되어 자극에 대한 보상을 예측하는 데 작용한다. 또한 <a href="#">기저핵</a>에도 작용하여 운동을 정밀하게 조정하는 데 필요하다. 따라서 도파민 분비 조절에 이상이 발생하면 다양한 증상이 나타난다. 보상회로에서 도파민 농도가 낮아지면 <a href="#">우울증</a>이 나타날 수 있고, 보상회로에서 도파민이 과다하면 <a href="#">중독</a>으로 나타날 수 "있으며, 운동 시스템을 향하는 도파민 신경세포가 손상되면 운동장애인 <a href="#">파킨슨병</a>이 나타날 수 있다.</p>
+
+    <h3 id="s3-1">학습, 강화, 보상 행동</h3>
+    <p>도파민은 <a href="#">보상회로</a>에서 분비되어 자극에 대한 보상을 예측하는 데 작용한다. 예상치 못한 보상이 주어지면 도파민 분비가 증가하고, 예상된 보상이 주어지지 않으면 도파민 분비가 감소한다. 이는 행동 강화와 학습에 중요한 역할을 한다.</p>
+
+    <h3 id="s3-2">운동조절</h3>
+    <p><a href="#">기저핵</a>의 도파민은 운동을 정밀하게 조정하는 데 필요하다. <a href="#">흑질</a>의 도파민 신경세포가 손상되면 <a href="#">파킨슨병</a>이 발생한다.</p>
+
+    <h3 id="s3-3">인지와 전두엽</h3>
+    <p><a href="#">전두엽</a>의 도파민은 인지 기능, 주의력, 작업 기억에 관여한다. 도파민 시스템의 이상은 <a href="#">조현병</a>이나 <a href="#">ADHD</a>와 관련이 있다.</p>
+
+    <h2 id="s4">분포 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>도파민을 분비하는 신경세포는 뇌 전체에 걸쳐 분포하지만, 주로 <a href="#">흑질</a>과 <a href="#">복측피개야</a>에 집중되어 있다. 주요 도파민 경로는 중뇌변연계 경로, 중뇌선조체 경로, 중뇌피질 경로, 결절누두 경로로 나뉜다.</p>
+
+    <h2 id="s5">작동 기전 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>도파민은 G단백질 연결 수용체인 도파민 수용체(D1~D5)에 결합하여 작용한다. D1, D5는 아데닐산 고리화효소를 활성화하여 cAMP를 증가시키고, D2, D3, D4는 cAMP를 감소시킨다.</p>
+
+    <h2 id="s6">질병, 증상, 약물치료 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>도파민 시스템의 이상은 <a href="#">파킨슨병</a>, <a href="#">조현병</a>, <a href="#">ADHD</a>, <a href="#">우울증</a>, <a href="#">약물중독</a> 등 다양한 신경정신질환과 관련이 있다.</p>
+
+    <h3 id="s6-1">다발성 경화증</h3>
+    <p>다발성 경화증 환자에서 도파민 시스템 이상이 보고되고 있으나, 아직 명확한 인과관계는 밝혀지지 않았다.</p>
+
+    <h3 id="s6-2">파킨슨병</h3>
+    <p>파킨슨병은 흑질의 도파민 신경세포가 점차 소실되어 운동 조절 능력이 저하되는 질환이다. L-DOPA를 이용한 도파민 보충 치료가 대표적인 치료법이다.</p>
+
+
+    <h2 id="s6b">예능과 도파민 조형 언어 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>현대 예능 프로그램은 도파민 분비를 극대화하는 방향으로 치밀하게 설계된다. 단순한 재미를 넘어, 시청자가 자발적으로 멈추지 못하도록 만드는 구조적 장치들이 영상 전반에 걸쳐 삽입된다. 이를 <strong>도파민 조형 언어</strong>라 부른다.</p>
+    <h3>자막 설계</h3>
+    <p>한국 예능에서 자막은 단순한 정보 전달 수단이 아니다. 자막의 크기, 색상, 폰트, 위치는 모두 시청자의 감정을 특정 방향으로 유도하기 위해 정밀하게 설계된다. PD가 자막을 통해 직접 개입하여 출연자와 시청자 사이에서 독립적인 언어로 기능하는 방식은 한국 예능만의 고유한 특징이다. 무한도전의 궁서체 해골 자막, 신서유기의 나영석 PD 자막 개입이 대표적 사례다. 이러한 자막들은 단순히 발화 내용을 전달하는 것을 넘어, 장면의 감정 톤을 규정하고 출연자의 이미지를 고착화하는 역할을 한다.</p>
+    <h3>BGM 및 효과음</h3>
+    <p>배경음악(BGM)은 장면의 감정을 즉각적으로 전환하는 도구로 사용된다. 코믹 상황에는 경쾌한 멜로디가, 갈등 장면에는 긴장감 있는 음악이 삽입되며, 이 전환은 0.5초 이내에 이루어지는 경우가 많다. 효과음은 특정 출연자의 행동이나 발언에 반복적으로 삽입되어 캐릭터를 고착화하는 효과를 낸다.</p>
+    <h3>편집 리듬</h3>
+    <p>클리프행어(cliffhanger) 편집은 핵심 정보를 다음 회차로 미루어 시청 지속을 유도하는 기법이다. 이는 슬롯머신의 가변적 보상 구조와 동일한 심리 메커니즘으로 작동한다. 핵심 결과 발표 직전에 광고를 배치하거나, 예고편에서 충격적인 장면만을 편집하여 호기심을 극대화하는 방식이 이에 해당한다.</p>
+    <h3>클로즈업과 반응컷</h3>
+    <p>출연자의 표정을 극단적으로 확대하는 클로즈업 편집은 시청자의 감정 이입을 강화한다. 특히 A의 발언 중간에 B의 반응 표정을 삽입하는 반응컷은, B의 실제 반응과 무관하게 다른 시간대에 촬영된 영상을 끼워 넣는 방식으로 구현되는 경우가 많다.</p>
+
+    <h2 id="s6c">일본 예능의 테로프 문화 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>일본 예능에서 테로프(テロップ)는 화면 전체를 자막으로 덮어버리는 방식으로 사용된다. 이른바 테로프테러(テロップテロ)라 불리는 현상은, 여러 폰트와 말풍선이 동시에 화면에 등장하여 시청자가 어디를 봐야 할지 모르게 만든다. 일본 버라이어티 프로그램에서는 화면 귀퉁이에 패널 반응 분할칸이 항상 고정되어 있어, 해당 장면에서 어떻게 반응해야 하는지를 시청자에게 암묵적으로 지시한다.</p>
+    <p>효과음 밀도 또한 한국이나 미국 예능에 비해 월등히 높다. 출연자의 말 끝마다, 표정이 변할 때마다 즉각적인 효과음이 삽입되어 감정을 설계한다. 이 과정에서 시청자는 자신의 자율적 감정 형성 능력을 잃고, 제작진이 의도한 방향으로 감정이 유도된다.</p>
+
+    <h2 id="s6d">미국·영국 예능의 구조적 편집 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>미국과 영국의 리얼리티 프로그램은 화면 위에 레이어를 얹는 방식이 아니라, 구조 자체를 변형하는 방식을 사용한다. 프랭켄바이팅(Frankenbiting)은 서로 다른 맥락에서 발화된 단어들을 잘라붙여 실제로 하지 않은 말을 제조하는 편집 기법이다.</p>
+    <p>컨페셔널 카메라(confessional camera)는 출연자를 1인 독방 인터뷰 환경에 배치하고, 프로듀서가 옆에서 특정 발언을 유도하는 방식으로 운영된다. 이렇게 수집된 발언은 실제 촬영 상황과 전혀 다른 맥락에 삽입되어 방영된다. NDA(비공개 계약)는 출연자가 방영 후 편집 방식에 이의를 제기하거나 실제 상황을 공개하는 것을 법적으로 금지한다.</p>
+
+    <h2 id="s6e">도파민 과잉과 역효과 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>도파민 자극이 일정 수준을 초과하면 오히려 반감 효과가 발생한다. 지나치게 자극적인 편집이 반복될 경우 시청자는 피로감을 느끼고 콘텐츠에서 이탈하게 된다. 이를 역U자 패턴이라 한다. 히토 슈타이얼(Hito Steyerl)은 <em>In Defense of the Poor Image</em>(2009)에서 이미지의 과잉이 오히려 비가시성을 만든다고 주장했다. 복사되고 압축되고 유통되는 과정에서 이미지는 열화(degradation)되며, 결국 원래의 의미를 상실하게 된다.</p>
+    <p>가이 드보르(Guy Debord)는 <em>스펙터클의 사회</em>(1967)에서 모든 살아있는 것은 스펙터클로 전락한다고 선언했다. 예능 프로그램에서 출연자의 실제 감정과 관계가 편집에 의해 스펙터클로 변환되는 과정은 드보르의 이 테제를 시각적으로 구현한다.</p>
+
+    <h2 id="s6f">숏폼 플랫폼과 도파민 설계 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>틱톡(TikTok), 유튜브 쇼츠(YouTube Shorts), 인스타그램 릴스(Instagram Reels)는 기존 예능의 도파민 조형 언어를 UI 수준에서 구현한 플랫폼이다. 무한 스크롤, 자동 재생, 가변적 보상 구조가 알고리즘에 내장되어 있어, 사용자가 콘텐츠를 멈추기 어려운 환경을 조성한다.</p>
+    <p>닐 이얄(Nir Eyal)은 <em>Hooked</em>(2014)에서 습관 형성 제품의 구조를 트리거-행동-가변적 보상-투자의 4단계로 설명했다. 틱톡의 FYP(For You Page) 알고리즘은 사용자의 시청 시간, 반복 재생 횟수, 좋아요 등의 행동 데이터를 실시간으로 분석하여 다음 콘텐츠를 선별한다. 이 과정에서 사용자는 자신이 선택하고 있다는 느낌을 받지만, 실제로는 알고리즘이 설계한 경로를 따라 이동하고 있다.</p>
+
+    <h2 id="s6g">악마의 편집과 출연자 인권 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>악마의 편집(devil's edit)이란 출연자의 발언이나 행동 중 특정 부분만 선택적으로 편집하여 실제와 다른 이미지를 만들어내는 기법이다. 맥락이 제거된 장면, 의도적으로 삽입된 반응 컷, 감정을 과장하는 BGM 등이 주로 활용된다.</p>
+    <p>2020년 일본의 리얼리티 쇼 테라스하우스(テラスハウス) 출연자 하나기 하나(木村花)의 사망 사건은 악마의 편집과 이로 인한 사이버 불링의 위험성을 사회적으로 환기시켰다. 이 사건을 계기로 일본에서는 리얼리티 프로그램의 편집 윤리에 관한 논의가 본격화되었다.</p>
+    <p>프로듀스 101 시리즈에서 드러난 투표 조작 사건은, 리얼리티 프로그램이 표방하는 '시청자 참여'와 '공정한 경쟁'이라는 서사 자체가 제작진의 의도에 의해 얼마든지 조작될 수 있음을 보여주었다.</p>
+
+    <h2 id="s6h">국가별 도파민 조형 언어 비교 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>한국, 일본, 미국·영국은 각기 다른 방식으로 도파민 조형 언어를 구현한다. 한국은 화면 위에 레이어를 얹는 방식(자막, BGM, 효과음)을 사용하며, 시청자가 편집의 존재를 인식할 수 있다. 일본은 화면을 자막으로 완전히 덮어버리는 방식을 사용하며, 보여도 정보 과잉으로 압도된다. 미국·영국은 구조 자체를 바꾸는 방식을 사용하며, 원본 영상 없이는 조작인지 알 수 없다.</p>
+    <p>이 차이는 각국의 방송 문화, 시청자 기대, 법적 규제 환경의 차이에서 비롯된다. 그러나 세 방식 모두 시청자가 콘텐츠에서 이탈하지 못하도록 설계된다다는 공통점을 가진다.</p>
+
+    <h2 id="s7">참고 문헌 <a class="edit-link" href="#">[편집]</a></h2>
+    <p>이 문서에는 <a href="#">다음</a>에서 배포한 콘텐츠를 기초로 작성된 내용이 포함되어 있습니다.</p>
+
+    <div style="height:200px;"></div>
+  </div><div id="wiki-rightbar">
+    <div class="rb-title">글</div>
+    <div style="height:8px;"></div>
+    <div class="rb-title">크기</div>
+    <div class="rb-item"><div class="rb-radio"></div><span>작음</span></div>
+    <div class="rb-item"><div class="rb-radio checked"></div><span>표준</span></div>
+    <div class="rb-item"><div class="rb-radio"></div><span>큼</span></div>
+    <div style="height:12px;"></div>
+    <div class="rb-title">너비</div>
+    <div class="rb-item"><div class="rb-radio checked"></div><span>표준</span></div>
+    <div class="rb-item"><div class="rb-radio"></div><span>넓게</span></div>
+    <div style="height:12px;"></div>
+    <div class="rb-title">색 (베타)</div>
+    <div class="rb-item"><div class="rb-radio"></div><span>자동</span></div>
+    <div class="rb-item"><div class="rb-radio checked"></div><span>라이트</span></div>
+    <div class="rb-item"><div class="rb-radio"></div><span>다크</span></div>
+  </div>
+
+</div><script>
+// ── 타이핑 텍스트 풀 ──
+const TEXTS = [
+  { t:"[예능 대본: 메뉴 선정, 이것도 전쟁이다]", s:32, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"장소: 비좁은 승합차 안", s:24, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"A: 여러분, 우리는 지금 기로에 서 있습니다.", s:28, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"오늘 점심, 제육을 먹느냐, 돈가스를 먹느냐.", s:28, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"이 결정이 앞으로의 우리 한 주를 결정할 겁니다.", s:26, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"[편집점: A의 비장한 얼굴 클로즈업 + 배경음악 007 테마 짧게 삽입]", s:18, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"B: 형님, 제발 좀. 그냥 아무거나 시켜요. 벌써 1시 반이에요.", s:26, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"제육 하면 30분, 돈가스 하면 40분. 지금 10분 차이에 우리 생사가 오가요.", s:24, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"[편집점: B의 어이없다는 듯한 표정 위로 황당 자막 효과]", s:18, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"C: 아니, 의견을 좁혀야지. 어제도 제육 먹었잖아! 돈가스로 가자, 돈가스로.", s:24, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"D: 돈가스... 튀김... 저 바삭함...", s:28, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"형님, 저 어제 꿈에 바삭한 과자가 나왔는데 그게 돈가스였나 봐요!", s:24, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"[편집점: D의 뜬금없는 리액션에 화면이 잠시 줌아웃되며 웃음소리 효과음 삽입]", s:18, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"A: C! 넌 어제 제육의 그 불맛을 잊었나? 그 불맛은 단순한 양념이 아니야.", s:24, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"한식에 대한 예우라고!", s:32, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"B: 예우? 제육이 예우면 돈가스는 뭡니까? 양식에 대한 모독이에요?", s:24, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"이게 지금 논리적으로 맞냐고요!", s:30, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"[편집점: B와 A의 얼굴을 빠르게 교차 편집, 중간에 논리 실종 자막]", s:18, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"C: 아!! 다 몰라! 그냥 다 같이 편의점 가서 컵라면 먹어!", s:28, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"D: 컵라면은... 육개장이 진리인데...", s:30, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+  { t:"[편집점: 멤버 전원 허탈한 표정, 결국 원점으로 자막과 함께 화면 페이드 아웃]", s:18, c:"#00f", w:700, f:"'Pretendard',sans-serif" },
+];
+
+function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function rf(a,b)   { return Math.random()*(b-a)+a; }
+
+const layer = document.getElementById('overlay-layer');
+let scrollCount = 0;
+let lastScroll  = 0;
+
+function spawnText(n) {
+  for (let i = 0; i < n; i++) {
+    setTimeout(() => {
+      const d  = rand(TEXTS);
+      const el = document.createElement('div');
+      el.className = 'ot';
+      el.textContent = d.t;
+
+      // 위치
+      el.style.left = rf(0, 88) + 'vw';
+      el.style.top  = rf(2,  90) + 'vh';
+
+      // 스타일
+      el.style.fontSize   = d.s + 'px';
+      el.style.fontWeight = d.w;
+      el.style.color      = d.c;
+      el.style.fontFamily = d.f || "'Pretendard','Apple SD Gothic Neo',sans-serif";
+      el.style.zIndex     = Math.floor(rf(500,800)).toString();
+
+      if (d.bg) {
+        el.style.background = d.bg;
+        el.style.padding = '4px 14px';
+      }
+
+      // 타이핑 애니메이션 변수
+      const charW  = d.s * (d.bg ? 0.65 : 0.62);
+      const fullW  = d.t.length * charW + (d.bg ? 28 : 4);
+      const steps  = Math.max(d.t.length, 1);
+      const dur    = (steps * 0.055 + 0.15).toFixed(2) + 's';
+      const delay  = rf(0, 0.25).toFixed(2) + 's';
+
+      el.style.setProperty('--w',     fullW + 'px');
+      el.style.setProperty('--steps', steps);
+      el.style.setProperty('--dur',   dur);
+      el.style.setProperty('--delay', delay);
+
+      layer.appendChild(el);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { el.classList.add('typing'); });
+      });
+    }, i * 70);
+  }
+}
+
+window.addEventListener('scroll', () => {
+  const sy = window.scrollY;
+  if (sy - lastScroll > 50) {
+    scrollCount++;
+    lastScroll = sy;
+
+    const n = Math.min(Math.floor(scrollCount * 0.5) + 1, 10);
+    spawnText(n);
+
+    const dark = Math.min(scrollCount * 0.022, 0.5);
+    document.getElementById('wiki-content').style.filter  = `brightness(${1 - dark})`;
+    document.getElementById('wiki-sidebar').style.filter  = `brightness(${1 - dark})`;
+    document.getElementById('wiki-rightbar').style.filter = `brightness(${1 - dark})`;
+
+    document.getElementById('scroll-hint').textContent = `× ${scrollCount}`;
+  }
+});
+
+setInterval(() => {
+  if (scrollCount > 1) spawnText(1);
+}, 3500);
+
+/* ── 누락 없는 완벽 보정형 캡처 앤 프린트 매커니즘 ── */
+function saveArchive() {
+    const logo = document.getElementById('capture-logo');
+    logo.style.color = ['#00F','#F00','#0F0','#F0F','#FF0','#0FF'][Math.floor(Math.random()*6)];
+    logo.style.display = 'block';
+
+    // 1. 핵심 해결책: 화면에 깔린 모든 자막 요소를 즉시 강제 100% 노출 상태 클래스로 박제
+    const activeTexts = document.querySelectorAll('.ot');
+    activeTexts.forEach(el => {
+        el.classList.add('force-capture-show');
+    });
+
+    // 기존 잔여 스냅샷 제거
+    const oldImg = document.getElementById('print-snapshot');
+    if (oldImg) oldImg.remove();
+
+    // 2. 강제 렌더링 상태를 브라우저가 온전히 페인트할 수 있도록 딜레이 부여 후 캡처
+    setTimeout(() => {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const sx = window.scrollX;
+        const sy = window.scrollY;
+
+        html2canvas(document.body, {
+            useCORS: true,
+            backgroundColor: '#fff',
+            scale: 2,               // 출력 인쇄 해상도 2배 업스케일
+            width: vw,
+            height: vh,
+            x: sx,
+            y: sy,
+            windowWidth: vw,
+            windowHeight: vh,
+        }).then(canvas => {
+            const finalImgData = canvas.toDataURL('image/png');
+
+            // 이미지 파일 로컬 저장 트리거
+            const link = document.createElement('a');
+            link.download = 'GLUT_INFO_' + Date.now() + '.png';
+            link.href = finalImgData;
+            link.click();
+            
+            logo.style.display = 'none';
+
+            // 캡처가 끝났으므로 라이브 화면의 박제 클래스는 제거해서 애니메이션 복구
+            activeTexts.forEach(el => {
+                el.classList.remove('force-capture-show');
+            });
+
+            // 프린트 전용 이미지 생성 후 인쇄창 호출
+            const printSnapshot = document.createElement('img');
+            printSnapshot.id = 'print-snapshot';
+            printSnapshot.src = finalImgData;
+
+            printSnapshot.onload = () => {
+                setTimeout(() => { window.print(); }, 150);
+            };
+            document.body.appendChild(printSnapshot);
+        }).catch(err => {
+            console.error('캡처 실패:', err);
+            logo.style.display = 'none';
+            // 에러 시에도 클래스 복구
+            activeTexts.forEach(el => {
+                el.classList.remove('force-capture-show');
+            });
+        });
+    }, 450); // 렌더링 유실을 막기 위해 안정화 시간 확장 조율
+}
+
+window.addEventListener('afterprint', () => {
+    const ps = document.getElementById('print-snapshot');
+    if (ps) ps.remove();
+});
+</script>
+</body>
+</html>
