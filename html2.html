@@ -1,1 +1,534 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>GLUT - Face Masking (Enhanced UI)</title>
+    <style>
+        * { box-sizing: border-box; }
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            background-color: #fff; 
+            width: 100vw; 
+            height: 100vh; 
+            overflow: hidden; 
+            font-family: 'Times New Roman', serif;
+        }
 
+        /* ── 추상화 블록 컬러 ── */
+        .blk-b { background-color: rgb(0,0,255); display: inline-block; }
+        .blk-k { background-color: #000; display: inline-block; }
+        .blk-g { background-color: #b4b4b4; display: inline-block; }
+        .blk-gold { background-color: #DAA520; display: inline-block; }
+
+        /* ── 크롬 브라우저 바 ── */
+        #chrome-bar {
+            background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+            border-bottom: 1px solid #999;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 35px;
+        }
+        .chrome-btns { display: flex; gap: 4px; }
+        .chrome-btns span {
+            width: 20px; height: 20px;
+            background-color: transparent;
+            border: 1px solid #aaa;
+            border-radius: 3px;
+            display: inline-block;
+        }
+        #chrome-url {
+            flex: 1;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            height: 22px;
+            border-radius: 2px;
+            margin: 0 10px;
+        }
+        #chrome-search {
+            width: 150px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            height: 22px;
+            border-radius: 2px;
+        }
+
+        /* ── 상단 네비게이션 ── */
+        #top-nav {
+            display: flex;
+            justify-content: flex-end;
+            padding: 4px 14px;
+            gap: 12px;
+            font-size: 12px;
+            background: rgba(255,255,255,0.95);
+            border-bottom: 1px solid #eee;
+            width: 100%;
+        }
+        #top-nav a { color: #00f; text-decoration: none; cursor: pointer; }
+        #top-nav a:hover { text-decoration: underline; }
+
+        /* ── 유튜브 헤더 ── */
+        #yt-header {
+            border-top: 1px solid #ccc;
+            border-bottom: 3px solid rgb(0,0,255);
+            padding: 10px 15px 0;
+            background-color: #fff;
+        }
+        .yt-row { display: flex; align-items: center; margin-bottom: 8px; }
+        .yt-left { display: flex; gap: 8px; }
+        .yt-right { display: flex; gap: 8px; margin-left: auto; }
+        
+        .yt-tabs { display: flex; gap: 4px; align-items: flex-end; margin-top: 5px; }
+        .yt-tabs span { height: 18px; border-radius: 3px 3px 0 0; }
+
+        /* ── 메인 레이아웃 (우측 확장 반영) ── */
+        #main-layout {
+            display: flex;
+            padding: 10px 15px;
+            gap: 20px; /* 갭 약간 확장 */
+            height: calc(100vh - 120px); 
+        }
+
+        /* ── 왼쪽: 비디오 ── */
+        #left-col { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            min-width: 0;
+        }
+
+        #controls { margin-bottom: 10px; display: flex; gap: 5px; }
+        .src-btn {
+            width: 80px; height: 20px;
+            border: 1px solid rgb(0,0,255);
+            background-color: #fff;
+            cursor: pointer;
+        }
+        .src-btn.active { background-color: rgb(0,0,255); }
+
+        #video-wrapper {
+            position: relative;
+            width: 100%;
+            flex: 1;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px; /* 하단 갭 확장 */
+        }
+
+        #input-video, #output-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: contain; 
+        }
+        #output-canvas {
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        #loading-text {
+            position: absolute;
+            top: 10px; left: 10px;
+            color: red; font-family: sans-serif; font-size: 12px; z-index: 20;
+        }
+
+        /* ★ 영상 하단 네모 두께 대폭 강화 */
+        .info-row { display: flex; gap: 15px; margin-bottom: 12px; align-items: center; }
+        .info-row span.blk-k { height: 32px; } /* 제목 블록 두께 */
+        .info-row span.blk-b { height: 24px; } /* 정보 스트라이프 두께 */
+        
+        /* ── 오른쪽: 리스트 (★ 너비 420px로 확장 및 세로 비율 고정) ── */
+        #right-col { 
+            width: 420px; 
+            flex-shrink: 0;
+            display: flex; 
+            flex-direction: column; 
+            overflow-y: hidden;
+            border-left: 1px solid #eee; /* 구분선 추가 */
+            padding-left: 10px;
+        }
+
+        .ad-block { display: flex; gap: 12px; margin-bottom: 25px; align-items: center; }
+        .ad-thumb { width: 90px; height: 90px; background-color: #000; flex-shrink: 0; }
+        .ad-lines { display: flex; flex-direction: column; gap: 6px; flex: 1; justify-content: center;}
+
+        /* 리스트 아이템 비율 키움 */
+        .list-item { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; }
+        .list-thumb { width: 160px; height: 96px; background-color: #000; flex-shrink: 0; position: relative; }
+        .list-thumb-time { position: absolute; right: 4px; bottom: 4px; width: 40px; height: 14px; background-color: #888; font-size: 10px;}
+        .list-info { display: flex; flex-direction: column; gap: 7px; flex: 1; justify-content: flex-start; padding-top: 4px;}
+
+        /* 프린트 고화질 스냅샷 스타일 */
+        #print-snapshot { display: none; }
+        #capture-logo {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 25vw;
+            font-weight: 900;
+            z-index: 10002;
+            letter-spacing: -0.1em;
+            pointer-events: none;
+            font-family: 'Times New Roman', serif;
+        }
+
+        @media print {
+            @page { size: landscape; margin: 0; }
+            html, body {
+                width: 100vw !important;
+                height: 100vh !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            body > *:not(#print-snapshot) { display: none !important; }
+            #print-snapshot {
+                display: block !important;
+                position: fixed !important;
+                top: 0 !important; left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                object-fit: contain !important;
+                z-index: 999999 !important;
+            }
+        }
+    </style>
+
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <div id="capture-logo">GLUT</div>
+
+    <div id="top-nav">
+        <a href="index.html">Home</a>
+        <a href="html1.html">Noise</a>
+        <a href="html3.html">Info</a>
+        <a href="html4.html">Archive</a>
+        <a onclick="saveArchive()">Print</a>
+    </div>
+
+    <div id="yt-header">
+        <div class="yt-row">
+            <div class="yt-left">
+                <span class="blk-b" style="width: 100px; height: 20px;"></span>
+                <span class="blk-k" style="width: 40px; height: 20px;"></span>
+            </div>
+            <div class="yt-right">
+                <span class="blk-b" style="width: 40px; height: 20px;"></span>
+                <span class="blk-k" style="width: 20px; height: 20px;"></span>
+                <span class="blk-b" style="width: 40px; height: 20px;"></span>
+                <span class="blk-g" style="width: 120px; height: 20px;"></span>
+                <span class="blk-gold" style="width: 40px; height: 20px;"></span>
+            </div>
+        </div>
+        <div class="yt-tabs">
+            <span class="blk-b" style="width: 60px;"></span>
+            <span class="blk-g" style="width: 60px;"></span>
+            <span class="blk-g" style="width: 60px;"></span>
+            <span class="blk-g" style="width: 60px;"></span>
+            <span class="blk-gold" style="width: 40px; height: 14px; margin-left: 10px; margin-bottom: 2px;"></span>
+        </div>
+    </div>
+
+    <div id="main-layout">
+        <div id="left-col">
+            <div id="controls">
+                <div class="src-btn active" id="btn-vid" onclick="switchSource('video')"></div>
+                <div class="src-btn" id="btn-cam" onclick="switchSource('webcam')"></div>
+            </div>
+
+            <div id="video-wrapper">
+                <div id="loading-text">MediaPipe Loading...</div>
+                <video id="input-video" src="IMB_VdTVfl.MOV" crossorigin="anonymous" playsinline autoplay muted loop></video>
+                <canvas id="output-canvas"></canvas>
+            </div>
+
+            <div class="info-row" style="justify-content: space-between;">
+                <div style="display:flex; gap:15px;"><span class="blk-k" style="width: 320px;"></span><span class="blk-g" style="width: 70px; height:32px;"></span></div>
+                <div style="display:flex; gap:15px;"><span class="blk-k" style="width: 60px;"></span><span class="blk-b" style="width: 60px;"></span></div>
+            </div>
+            <div class="info-row"><span class="blk-b" style="width: 100%;"></span></div>
+            <div class="info-row"><span class="blk-b" style="width: 85%;"></span></div>
+            <div class="info-row"><span class="blk-b" style="width: 70%;"></span></div>
+        </div>
+
+        <div id="right-col">
+            <div class="ad-block">
+                <div class="ad-thumb"></div>
+                <div class="ad-lines">
+                    <span class="blk-b" style="width: 100%; height: 16px;"></span>
+                    <span class="blk-b" style="width: 75%; height: 16px;"></span>
+                    <span class="blk-k" style="width: 100%; height: 14px;"></span>
+                    <span class="blk-g" style="width: 60%; height: 14px;"></span>
+                </div>
+            </div>
+            <script>
+                for(let i=0; i<6; i++) {
+                    document.write(`
+                        <div class="list-item">
+                            <div class="list-thumb"><div class="list-thumb-time"></div></div>
+                            <div class="list-info">
+                                <span class="blk-b" style="width: 100%; height: 14px;"></span>
+                                <span class="blk-b" style="width: 85%; height: 14px;"></span>
+                                <span class="blk-g" style="width: 65%; height: 12px;"></span>
+                            </div>
+                        </div>
+                    `);
+                }
+            </script>
+        </div>
+    </div>
+
+<script>
+    const videoElement = document.getElementById('input-video');
+    const canvasElement = document.getElementById('output-canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const loadingText = document.getElementById('loading-text');
+    
+    let stream = null;
+    let detectLoop = null;
+
+    let smoothCx = 0, smoothCy = 0, smoothW = 0, smoothH = 0;
+    let targetCx = 0, targetCy = 0, targetW = 0, targetH = 0;
+    let hasFace = false;
+    let isFirstFace = true;
+
+    // 도파민 이모지 클러스터 설정
+    const EMOJIS = ['😂', '😭', '💀', '😱', '😡', '👀', '🔥', '🤯', '🤡', '🤮', '🤑', '💯'];
+    let emojiCluster = [];
+
+    function initEmojiCluster() {
+        emojiCluster = [];
+        
+        // 1. 코어(Core) 그룹: 얼굴/캥거루 중심 은폐 용도
+        for(let i=0; i<15; i++) {
+            emojiCluster.push({
+                char: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
+                offX: (Math.random() - 0.5) * 0.4, 
+                offY: (Math.random() - 0.5) * 0.4, 
+                scale: Math.random() * 0.8 + 1.2,  
+                rot: (Math.random() - 0.5) * 0.5,
+                phaseX: Math.random() * Math.PI * 2,
+                phaseY: Math.random() * Math.PI * 2,
+                speedX: 0.001, 
+                speedY: 0.001, 
+                floatAmpX: Math.random() * 15, 
+                floatAmpY: Math.random() * 15
+            });
+        }
+
+        // 2. 부유(Float) 그룹: 형체 주변 및 비디오 전체 영역으로 XY축 표류 확장
+        for(let i=0; i<35; i++) {
+            emojiCluster.push({
+                char: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
+                offX: (Math.random() - 0.5) * 3.5, 
+                offY: (Math.random() - 0.5) * 3.5, 
+                scale: Math.random() * 0.7 + 0.4,  
+                rot: (Math.random() - 0.5) * 1.2,
+                phaseX: Math.random() * Math.PI * 2,
+                phaseY: Math.random() * Math.PI * 2,
+                speedX: (Math.random() * 0.002) + 0.001, 
+                speedY: (Math.random() * 0.002) + 0.001, 
+                floatAmpX: Math.random() * 150 + 50, 
+                floatAmpY: Math.random() * 150 + 50
+            });
+        }
+    }
+    
+    initEmojiCluster();
+    setInterval(initEmojiCluster, 5000); 
+
+    const faceDetection = new FaceDetection({locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`;
+    }});
+    
+    faceDetection.setOptions({
+        model: 'short',
+        minDetectionConfidence: 0.15 
+    });
+
+    faceDetection.onResults((results) => {
+        loadingText.style.display = 'none';
+        
+        if (videoElement.videoWidth === 0) return; 
+        
+        if (canvasElement.width !== videoElement.videoWidth) {
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+        }
+
+        if (results.detections.length > 0) {
+            hasFace = true;
+            const bbox = results.detections[0].boundingBox;
+            targetW = bbox.width * canvasElement.width * 1.5;
+            targetH = bbox.height * canvasElement.height * 1.5;
+            targetCx = bbox.xCenter * canvasElement.width;
+            targetCy = bbox.yCenter * canvasElement.height; 
+        } else {
+            hasFace = false;
+        }
+    });
+
+    function render(time) {
+        if (canvasElement.width === 0) {
+            requestAnimationFrame(render);
+            return;
+        }
+
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+        if (hasFace) {
+            if (isFirstFace) {
+                smoothCx = targetCx; smoothCy = targetCy; 
+                smoothW = targetW; smoothH = targetH;
+                isFirstFace = false;
+            } else {
+                smoothCx += (targetCx - smoothCx) * 0.12; 
+                smoothCy += (targetCy - smoothCy) * 0.12;
+                smoothW  += (targetW - smoothW) * 0.12;
+                smoothH  += (targetH - smoothH) * 0.12;
+            }
+
+            drawFloatingEmojis(canvasCtx, smoothCx, smoothCy, smoothW, smoothH, time);
+        } else {
+            isFirstFace = true; 
+        }
+
+        requestAnimationFrame(render);
+    }
+
+    function drawFloatingEmojis(ctx, cx, cy, w, h, time) {
+        const baseSize = w * 0.45; 
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        emojiCluster.forEach(em => {
+            ctx.save();
+            
+            let driftX = Math.sin(time * em.speedX + em.phaseX) * em.floatAmpX;
+            let driftY = Math.sin(time * em.speedY + em.phaseY) * em.floatAmpY;
+
+            let px = cx + (em.offX * w) + driftX;
+            let py = cy + (em.offY * h) + driftY;
+            
+            px = Math.max(0, Math.min(canvasElement.width, px));
+            py = Math.max(0, Math.min(canvasElement.height, py));
+
+            ctx.translate(px, py);
+            ctx.rotate(em.rot + Math.sin(time * em.speedX) * 0.2); 
+            ctx.font = `${baseSize * em.scale}px sans-serif`;
+            
+            ctx.fillText(em.char, 0, 0);
+            ctx.restore();
+        });
+    }
+
+    async function processVideo() {
+        if (!videoElement.paused && !videoElement.ended && videoElement.readyState >= 2) {
+            await faceDetection.send({image: videoElement});
+        }
+        detectLoop = requestAnimationFrame(processVideo);
+    }
+
+    videoElement.addEventListener('playing', () => {
+        if(!detectLoop) processVideo();
+    });
+
+    requestAnimationFrame(render);
+
+    async function switchSource(type) {
+        document.getElementById('btn-vid').classList.toggle('active', type === 'video');
+        document.getElementById('btn-cam').classList.toggle('active', type === 'webcam');
+
+        if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+            stream = null;
+        }
+
+        hasFace = false;
+        isFirstFace = true; 
+        initEmojiCluster(); 
+
+        if (type === 'video') {
+            videoElement.srcObject = null;
+            videoElement.src = "IMB_VdTVfl.MOV";
+            videoElement.play();
+        } else {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                videoElement.srcObject = stream;
+                videoElement.play();
+            } catch (err) {
+                alert("웹캠 권한을 허용해주세요!");
+            }
+        }
+    }
+
+    faceDetection.initialize();
+
+    /* ── html3 아키텍처 하이재킹 방식 스냅샷 인쇄 스크립트 ── */
+    function saveArchive() {
+        const logo = document.getElementById('capture-logo');
+        logo.style.color = ['#00F','#F00','#0F0','#F0F','#FF0','#0FF'][Math.floor(Math.random()*6)];
+        logo.style.display = 'block';
+
+        const oldImg = document.getElementById('print-snapshot');
+        if (oldImg) oldImg.remove();
+
+        setTimeout(() => {
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+
+            html2canvas(document.body, {
+                useCORS: true,
+                backgroundColor: '#fff',
+                scale: 2, 
+                width: vw,
+                height: vh,
+                x: 0, y: 0,
+                windowWidth: vw,
+                windowHeight: vh,
+            }).then(canvas => {
+                const finalImgData = canvas.toDataURL('image/png');
+
+                const link = document.createElement('a');
+                link.download = 'GLUT_FACE_' + Date.now() + '.png';
+                link.href = finalImgData;
+                link.click();
+                
+                logo.style.display = 'none';
+
+                const printSnapshot = document.createElement('img');
+                printSnapshot.id = 'print-snapshot';
+                printSnapshot.src = finalImgData;
+
+                printSnapshot.onload = () => {
+                    setTimeout(() => { window.print(); }, 150);
+                };
+                document.body.appendChild(printSnapshot);
+            }).catch(err => {
+                console.error('캡처 실패:', err);
+                logo.style.display = 'none';
+            });
+        }, 350); 
+    }
+
+    window.addEventListener('afterprint', () => {
+        const ps = document.getElementById('print-snapshot');
+        if (ps) ps.remove();
+    });
+</script>
+</body>
+</html>
