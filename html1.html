@@ -1,1 +1,454 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <title>GLUT - DOPAMINE SLOT & INDEX</title>
+    <style>
+        * { box-sizing: border-box; }
+        html, body { 
+            margin: 0; 
+            padding: 0;
+            background: #000; 
+            font-family: "Times New Roman", serif; 
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden; 
+        }
 
+        /* ── 비디오 배경 고정 ── */
+        #bg-video {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 1; 
+            object-fit: cover;
+        }
+
+        /* ── 헤더 고정 (네비만, z-index 높게) ── */
+        #top-interface {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            z-index: 9999;
+            background: transparent;
+        }
+        #header-wrapper { position: relative; width: 100%; }
+        #header-img { width: 100%; height: auto; display: block; }
+
+        .fake-btn {
+            position: absolute;
+            top: 50%; transform: translateY(-50%);
+            width: 40px; height: 40px;
+            cursor: pointer;
+            background: transparent;
+        }
+        #fake-back-btn    { left: 15px; }
+        #fake-refresh-btn { left: 60px; }
+
+        #nav-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px 0 6px 16px;
+        }
+        .nav-link {
+            color: blue;
+            text-decoration: underline;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: "Times New Roman", serif;
+            background: #fff;
+            padding: 2px 6px;
+            display: inline;
+        }
+        .nav-link:hover { color: red; }
+
+        /* ── 스크롤 영역 ── */
+        #scroll-area {
+            position: relative;
+            z-index: 10; 
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ── 설명 텍스트 블록 ── */
+        #desc-block {
+            display: none;
+            position: relative;
+            z-index: 50;
+            line-height: 1.4;
+            padding: 12px 0 8px 16px;
+        }
+        .glut-link {
+            color: blue;
+            text-decoration: underline;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: "Times New Roman", serif;
+            background: #fff;
+            padding: 1px 4px;
+            display: inline;
+        }
+        .glut-link:hover { color: red; }
+        .desc-line {
+            display: inline;
+            background: #fff;
+            color: #000;
+            font-family: "Times New Roman", serif;
+            font-size: 13px;
+            padding: 1px 4px;
+            line-height: 1.4;
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
+        }
+
+        /* ── 도파민 레이어 ── */
+        #dopamine-layer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 600;
+            overflow: hidden; 
+        }
+        .spawned-image {
+            position: absolute;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+        }
+
+        /* ── 로딩 스피너 ── */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+        }
+        .spinner {
+            width: 28px; height: 28px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── 캡처 로고 ── */
+        #capture-logo {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 25vw;
+            font-weight: 900;
+            z-index: 10002;
+            letter-spacing: -0.1em;
+            pointer-events: none;
+        }
+
+        /* 평소에는 프린트 스냅샷 숨김 */
+        #print-snapshot {
+            display: none;
+        }
+
+        /* ── 프린트 전용 CSS ── */
+        @media print {
+            @page {
+                size: landscape; 
+                margin: 0; 
+            }
+            
+            html, body {
+                width: 100vw !important;
+                height: 100vh !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #000 !important;
+                overflow: hidden !important; 
+            }
+            
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* 실제 라이브 DOM 요소들은 전부 끄기 (까만 화면/2페이지 버그 원천 차단) */
+            body > *:not(#print-snapshot) {
+                display: none !important;
+            }
+            
+            /* 다운로드 된 이미지 단 하나만 화면 100%를 채우도록 설정 */
+            #print-snapshot {
+                display: block !important;
+                position: fixed !important;
+                top: 0 !important; left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                object-fit: contain !important; /* 비율 안 깨지고 딱 한 장에 들어가게 함 */
+                z-index: 999999 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<video autoplay muted loop id="bg-video">
+    <source src="bg.mp4" type="video/mp4">
+</video>
+
+<div id="loading-overlay"><div class="spinner"></div></div>
+<div id="capture-logo">GLUT</div>
+<div id="dopamine-layer"></div>
+
+<div id="top-interface">
+    <div id="header-wrapper">
+        <img src="headerimage.jpg" id="header-img" alt="header">
+        <div id="fake-back-btn"    class="fake-btn"></div>
+        <div id="fake-refresh-btn" class="fake-btn"></div>
+    </div>
+    <div id="nav-bar">
+        <a href="index.html" class="nav-link">Index</a>
+        <span class="nav-link" id="intro-tab" style="cursor:help;">Intro</span>
+        <a onclick="saveArchive()" class="nav-link" style="cursor:pointer;">Print Image</a>
+        <a href="html2.html" class="nav-link">Stage 2</a>
+        <a href="html3.html" class="nav-link">Stage 3</a>
+        <a href="html4.html" class="nav-link">Stage 4</a>
+    </div>
+</div>
+
+<div id="scroll-area">
+    <div id="desc-block">
+        <span class="desc-line"><a href="https://www.wordreference.com/enko/glut" target="_blank" class="glut-link">Glut</a>: The Architecture of Digital Dopamine</span><br>
+        <span class="desc-line">프로젝트 '<a href="https://www.are.na/chon-a-young/channels" target="_blank" class="glut-link">Glut</a>'은 비난하면서도 다음 화를 클릭하고,</span><br>
+        <span class="desc-line">지치면서도 숏츠를 멈추지 못하는 현대인의 지독한 역설에서</span><br>
+        <span class="desc-line">시작된 인터랙티브 아카이브다. <a href="https://www.wordreference.com/enko/glut" target="_blank" class="glut-link">Glut</a>은 우리가 '중독'이라</span><br>
+        <span class="desc-line">치부해온 현상이 사실은 자막의 색상, 사운드의 파동, 찰나의</span><br>
+        <span class="desc-line">편집 리듬 같은 치밀하게 설계된 '도파민 조형 언어'에 의한</span><br>
+        <span class="desc-line">구조적 결과물임을 해부한다. 사용자가 새로고침을 반복할수록</span><br>
+        <span class="desc-line">화면에는 전 세계 예능 콘텐츠에서 추출된 시각적 파편들이</span><br>
+        <span class="desc-line">무한히 증식하며,종국에는 너무 많아서 오히려 아무것도 보이지</span><br>
+        <span class="desc-line">않는 (<a href="https://www.wordreference.com/enko/glut" target="_blank" class="glut-link">Glut</a>) 혼돈의 상태에 이르게 한다. 사용자는 이 통제 불능의</span><br>
+        <span class="desc-line">도파민 덩어리를 직접 아카이빙함으로써 자극의 홍수 속에</span><br>
+        <span class="desc-line">놓인 자신의 위치를 확인하고, 시선을 점유하기 위해 설계된 </span><br>
+        <span class="desc-line">미디어의 조형적 메커니즘을 감각적으로 목격하게 된다.</span>
+    </div>
+</div>
+
+<script>
+    const introTab = document.getElementById('intro-tab');
+    const descBlock = document.getElementById('desc-block');
+
+    introTab.addEventListener('mouseenter', () => {
+        descBlock.style.display = 'block';
+    });
+
+    introTab.addEventListener('mouseleave', () => {
+        descBlock.style.display = 'none';
+    });
+
+    function adjustPadding() {
+        const h = document.getElementById('top-interface').offsetHeight;
+        document.getElementById('scroll-area').style.paddingTop = h + 'px';
+    }
+    window.addEventListener('resize', adjustPadding);
+
+    const extensions = ['jpg','png','gif','JPG','PNG','GIF'];
+
+    function spawnCascade(count, groupIndex, styleType) {
+        let startX = Math.random() * window.innerWidth;
+        let startY = styleType === 'explosion'
+            ? Math.random() * window.innerHeight
+            : Math.random() * (window.innerHeight * 0.4);
+        let vX = 0, vY = 0;
+        
+        if      (styleType === 'stream')  { vX = Math.random()*2-1;   vY = Math.random()*2+2; }
+        else if (styleType === 'spread')  { vX = Math.random()*12-6;  vY = Math.random()*4-2; }
+
+        const bombNum = Math.floor(Math.random() * 40) + 1;
+        const baseSrc = `bomb${bombNum}`;
+        const layer   = document.getElementById('dopamine-layer');
+        const cnt     = styleType === 'explosion' ? 1 : count;
+
+        for (let i = 0; i < cnt; i++) {
+            setTimeout(() => {
+                const img = document.createElement('img');
+                img.className = 'spawned-image';
+                let extIdx = 0;
+                img.src = `${baseSrc}.${extensions[extIdx]}`;
+                
+                img.onerror = function() {
+                    extIdx++;
+                    if (extIdx < extensions.length) this.src = `${baseSrc}.${extensions[extIdx]}`;
+                    else this.remove();
+                };
+                
+                if (styleType !== 'explosion') {
+                    startX += vX*15 + (Math.random()*10-5);
+                    startY += vY*15 + (Math.random()*8-4);
+                }
+                
+                img.style.left  = startX + 'px';
+                img.style.top   = startY + 'px';
+                img.style.width = styleType === 'explosion'
+                    ? (Math.random()*400+150)+'px' : '240px';
+                img.style.transform = `translate(-50%,-50%) rotate(${Math.random()*10-5}deg)`;
+                img.style.zIndex    = 100 + groupIndex*100 + i;
+                
+                layer.appendChild(img);
+                saveToSession(img.style.left, img.style.top, img.src, img.style.width, img.style.transform);
+            }, i * 15);
+        }
+    }
+
+    function reelsRefresh() {
+        const overlay = document.getElementById('loading-overlay');
+        overlay.style.display = 'flex';
+        const waitTime = Math.random() * 3000 + 500;
+        
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            const total = Math.min(Math.floor(Math.pow(waitTime/150, 2)), 100);
+            const gc    = Math.floor(Math.random()*3) + 3;
+            
+            for (let g = 0; g < gc; g++) {
+                const rand  = Math.random();
+                const style = rand < 0.4 ? 'stream' : (rand < 0.7 ? 'spread' : 'explosion');
+                spawnCascade(style === 'explosion' ? 1 : Math.floor(total/gc), g, style);
+            }
+        }, waitTime);
+    }
+
+    function resetDopamine() {
+        document.getElementById('dopamine-layer').innerHTML = '';
+        sessionStorage.removeItem('glut_data');
+    }
+
+    // Print Image: 블랙 스크린 현상 완전 해결
+    function saveArchive() {
+        const logo = document.getElementById('capture-logo');
+        logo.style.color = ['#00F','#F00','#0F0','#F0F','#FF0','#0FF'][Math.floor(Math.random()*6)];
+        logo.style.display = 'block';
+
+        const video = document.getElementById('bg-video');
+        
+        // 1. 캔버스로 비디오 프레임 임시 저장
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = video.videoWidth || window.innerWidth;
+        tempCanvas.height = video.videoHeight || window.innerHeight;
+        const ctx = tempCanvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+        
+        const videoFrameURL = tempCanvas.toDataURL('image/png');
+
+        // 2. 비디오를 가릴 임시 이미지 세팅
+        const tempImg = document.createElement('img');
+        tempImg.id = 'temp-bg-img';
+        tempImg.src = videoFrameURL;
+        tempImg.style.position = 'fixed';
+        tempImg.style.top = '0';
+        tempImg.style.left = '0';
+        tempImg.style.width = '100vw';
+        tempImg.style.height = '100vh';
+        tempImg.style.objectFit = 'cover';
+        tempImg.style.zIndex = '1'; 
+        document.body.appendChild(tempImg);
+
+        video.style.display = 'none';
+
+        // 3. 브라우저가 위 요소들을 페인트할 수 있도록 300ms 대기 후 화면 캡처
+        setTimeout(() => {
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+
+            html2canvas(document.body, {
+                useCORS: true,
+                backgroundColor: "#000",
+                scale: 2,
+                width: vw,
+                height: vh,
+                x: 0,
+                y: 0,
+                windowWidth: vw,
+                windowHeight: vh,
+            }).then(canvas => {
+                const finalImgData = canvas.toDataURL('image/png');
+                
+                // 1) 캡처 이미지 로컬 다운로드 실행
+                const link = document.createElement('a');
+                link.download = `GLUT_${Date.now()}.png`;
+                link.href = finalImgData;
+                link.click();
+                logo.style.display = 'none';
+
+                // 2) 프린트를 위한 '단일 이미지' 셋업
+                const printSnapshot = document.createElement('img');
+                printSnapshot.id = 'print-snapshot';
+                printSnapshot.src = finalImgData;
+                
+                // ★핵심★ 이미지가 브라우저에 완전히 로딩된 이후에 인쇄를 호출해야 블랙 스크린이 안 뜹니다.
+                printSnapshot.onload = () => {
+                    setTimeout(() => {
+                        window.print();
+                    }, 100); 
+                };
+                
+                document.body.appendChild(printSnapshot);
+
+            }).catch(err => {
+                console.error("캡처 실패:", err);
+                logo.style.display = 'none';
+                video.style.display = 'block';
+                if (tempImg) tempImg.remove();
+            });
+        }, 300); 
+    }
+
+    // 인쇄 창이 닫히면 캡처용으로 만든 임시 요소들 깔끔히 청소
+    window.addEventListener('afterprint', () => {
+        const tempImg = document.getElementById('temp-bg-img');
+        if (tempImg) tempImg.remove();
+        
+        const printSnapshot = document.getElementById('print-snapshot');
+        if (printSnapshot) printSnapshot.remove();
+        
+        const video = document.getElementById('bg-video');
+        if (video) video.style.display = 'block';
+    });
+
+    function saveToSession(x, y, s, w, r) {
+        let d = JSON.parse(sessionStorage.getItem('glut_data') || '[]');
+        d.push({ x, y, s, w, r });
+        sessionStorage.setItem('glut_data', JSON.stringify(d));
+    }
+
+    function restoreSession() {
+        const saved = JSON.parse(sessionStorage.getItem('glut_data') || '[]');
+        const layer = document.getElementById('dopamine-layer');
+        saved.forEach(d => {
+            const img = document.createElement('img');
+            img.src = d.s; 
+            img.className = 'spawned-image';
+            img.style.left = d.x; 
+            img.style.top = d.y;
+            img.style.width = d.w; 
+            img.style.transform = d.r;
+            img.style.zIndex = 50;
+            layer.appendChild(img);
+        });
+    }
+
+    window.onload = () => {
+        adjustPadding(); 
+        restoreSession();
+    };
+
+    document.getElementById('fake-refresh-btn').onclick = reelsRefresh;
+    document.getElementById('fake-back-btn').onclick    = resetDopamine;
+</script>
+</body>
+</html>
