@@ -1,1 +1,723 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>GLUT — Archive</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
+body {
+  background: #fff;
+  color: #000;
+  font-family: "pretendard", Times, serif;
+  font-size: 13px;
+}
+
+/* 상단 헤더 */
+#top-bar {
+  background: #fff;
+  border-bottom: 1px solid #ccc;
+  padding: 4px 12px;
+  text-align: right;
+  font-size: 11px;
+}
+#top-bar a { color: #00f; text-decoration: none; margin-left: 8px; }
+#top-bar a:hover { text-decoration: underline; }
+
+/* 로고 영역 */
+#logo-bar {
+  background: #fff;
+  padding: 8px 12px;
+  border-bottom: 2px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#logo {
+  font-size: 28px;
+  font-weight: bold;
+  font-family: "Times New Roman", serif;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+#logo span { color: rgb(0, 0, 255); }
+
+#logo-sub {
+  font-size: 11px;
+  color: #666;
+  margin-top: 2px;
+}
+
+#search-area {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+#search-area input {
+  border: 1px solid #999;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: "pretendard", serif;
+  width: 200px;
+}
+#search-area select {
+  font-size: 12px;
+  font-family: "pretendard", serif;
+  border: 1px solid #999;
+  padding: 2px 4px;
+}
+#search-area button {
+  font-size: 12px;
+  font-family: "pretendard", serif;
+  border: 1px solid #999;
+  background: #eee;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+/* 탭 네비 */
+#nav-tabs {
+  background: #e8e8e8;
+  border-bottom: 1px solid #999;
+  display: flex;
+  padding: 0 8px;
+}
+.nav-tab {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-family: "pretendard", serif;
+  color: #00f;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin-bottom: -1px;
+  cursor: pointer;
+  background: none;
+}
+.nav-tab:hover { text-decoration: underline; }
+.nav-tab.active {
+  background: #fff;
+  border-color: #999;
+  color: #000;
+  text-decoration: none;
+}
+
+/* 서브 필터 바 */
+#filter-bar {
+  background: #f8f8f8;
+  border-bottom: 1px solid #ccc;
+  padding: 4px 12px;
+  font-size: 11px;
+  display: flex;
+  gap: 0;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#filter-bar span { color: #666; margin-right: 4px; }
+.filter-link {
+  color: #00f;
+  text-decoration: none;
+  padding: 0 6px;
+  border-right: 1px solid #ccc;
+  cursor: pointer;
+  font-size: 11px;
+}
+.filter-link:last-child { border-right: none; }
+.filter-link:hover { text-decoration: underline; }
+.filter-link.active { color: #000; font-weight: bold; text-decoration: none; cursor: default; }
+
+
+.intro-top-wrap:hover .intro-top-panel { display: block !important; }
+
+/* 나라별 특징 패널 */
+#country-panel {
+  display: none;
+  background: #fffbe6;
+  border: 1px solid #e0c840;
+  border-left: 4px solid #e0c840;
+  margin: 8px 12px;
+  padding: 12px 16px;
+  font-size: 12px;
+}
+#country-panel table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 11px;
+}
+#country-panel th {
+  text-align: left;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  background: #f5f0d0;
+  font-weight: bold;
+  white-space: nowrap;
+  width: 90px;
+}
+#country-panel td {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  vertical-align: top;
+  line-height: 1.5;
+}
+#country-panel .col-h {
+  background: #f0ece0;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* 메인 컨텐츠 */
+#main {
+  padding: 8px 12px;
+}
+
+/* 섹션 헤더 */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 4px;
+  margin-bottom: 10px;
+}
+.section-title {
+  font-size: 14px;
+  font-weight: bold;
+}
+.section-count {
+  font-size: 11px;
+  color: #666;
+}
+
+/* 그리드 */
+#grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+}
+
+/* 카드 */
+.card {
+  padding: 8px;
+  border-right: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  vertical-align: top;
+}
+.card:hover { background: #f5f5ff; }
+.card.hidden { display: none; }
+
+.card-img-wrap {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #ddd;
+  margin-bottom: 4px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid #bbb;
+}
+.card-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.card-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #999;
+  background: #e8e8e8;
+  font-family: "pretendard", serif;
+}
+.card-duration {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 3px;
+  font-family: "pretendard", serif;
+}
+
+.card-title {
+  color: #00f;
+  font-size: 12px;
+  font-weight: bold;
+  text-decoration: none;
+  display: block;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+.card-title:hover { text-decoration: underline; }
+
+.card-meta {
+  font-size: 10px;
+  color: #666;
+  line-height: 1.6;
+}
+.card-meta .from { color: #00f; }
+.card-meta .from:hover { text-decoration: underline; cursor: pointer; }
+
+/* 별점 */
+.stars {
+  color: #f90;
+  font-size: 13px;
+  letter-spacing: -1px;
+  line-height: 1;
+  margin: 2px 0 1px;
+}
+.stars-empty { color: #ccc; }
+.rating-count { font-size: 10px; color: #666; }
+
+/* 도파민 배지 */
+.dopamine-badge {
+  display: inline-block;
+  font-size: 9px;
+  padding: 1px 4px;
+  margin-top: 2px;
+  border: 1px solid;
+}
+.badge-selected { border-color: #c00; color: #c00; background: #fff0f0; }
+.badge-control  { border-color: #999; color: #999; background: #f5f5f5; }
+
+/* 모달 */
+#modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  z-index: 9999;
+  overflow-y: auto;
+}
+#modal-box {
+  background: #fff;
+  max-width: 620px;
+  margin: 40px auto;
+  border: 2px solid #999;
+  padding: 0;
+}
+#modal-header {
+  background: #e8e8e8;
+  border-bottom: 1px solid #999;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: bold;
+}
+#modal-close {
+  background: none;
+  border: 1px solid #999;
+  font-size: 11px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: "Times New Roman", serif;
+}
+#modal-body { padding: 16px; }
+#modal-img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  background: #ddd;
+  border: 1px solid #ccc;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 12px;
+}
+.modal-title { font-size: 18px; color: #00f; margin-bottom: 4px; }
+.modal-meta-row { font-size: 11px; color: #666; margin-bottom: 8px; }
+.modal-stars { font-size: 18px; color: #f90; letter-spacing: -1px; margin-bottom: 4px; }
+.modal-section { font-size: 11px; font-weight: bold; color: #333; margin: 12px 0 4px; text-transform: uppercase; letter-spacing: 0.05em; border-top: 1px solid #eee; padding-top: 8px; }
+.modal-text { font-size: 12px; color: #333; line-height: 1.7; }
+
+/* 도파민 축 */
+.axes-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.axis-pill {
+  font-size: 10px;
+  padding: 2px 8px;
+  border: 1px solid;
+  font-family: "Times New Roman", serif;
+}
+.axis-on  { border-color: #000; color: #000; background: #000; color: #fff; }
+.axis-off { border-color: #ccc; color: #ccc; }
+
+/* 하단 네비 */
+#bottom-nav {
+  border-top: 1px solid #ccc;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+  margin-top: 20px;
+}
+#bottom-nav a { color: #00f; text-decoration: none; margin: 0 8px; }
+#bottom-nav a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div id="top-bar">
+  <a href="html0.html">Intro</a>
+  <a href="html1.html">Noise</a>
+  <a href="html2.html">Face</a>
+  <a href="html3.html">Info</a>
+</div>
+
+<div id="logo-bar">
+  <div>
+    <div id="logo">Glut</div>
+    <div id="logo-sub">Archive — Dopamine Formal Language Collection</div>
+  </div>
+  <div id="search-area">
+    <input type="text" id="search-input" placeholder="Search archive...">
+    <select>
+      <option>All</option>
+      <option>한국</option>
+      <option>일본</option>
+      <option>글로벌</option>
+    </select>
+    <button onclick="doSearch()">Search</button>
+  </div>
+</div>
+
+<div id="nav-tabs">
+  <a class="nav-tab active" onclick="setTab(this,'all')">Home</a>
+  <a class="nav-tab" onclick="setTab(this,'한국')">한국</a>
+  <a class="nav-tab" onclick="setTab(this,'일본')">일본</a>
+  <a class="nav-tab" onclick="setTab(this,'글로벌')">글로벌</a>
+  <a class="nav-tab" onclick="setTab(this,'selected')">선정 콘텐츠</a>
+</div>
+
+<div id="filter-bar">
+  <span>정렬:</span>
+  <span class="filter-link active" onclick="sortCards('id')">번호순</span>
+  <span class="filter-link" onclick="sortCards('stars')">도파민 높은순</span>
+  <span class="filter-link" onclick="sortCards('year')">연도순</span>
+  <span class="filter-link" onclick="sortCards('title')">가나다순</span>
+</div>
+
+<div id="country-panel"></div>
+
+<div id="main">
+  <div class="section-header">
+    <span class="section-title" id="section-title">Most Viewed — 도파민 조형 언어 아카이브</span>
+    <span class="section-count" id="count-display">Videos 1–50 of 50</span>
+  </div>
+  <div id="grid"></div>
+</div>
+
+<div id="modal">
+  <div id="modal-box">
+    <div id="modal-header">
+      <span id="modal-header-title">Video Information</span>
+      <button id="modal-close" onclick="closeModal()">× Close</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div id="bottom-nav">
+  <a href="html0.html">← Home</a>
+  <a href="html1.html">Noise</a>
+  <a href="html2.html">Face</a>
+  <a href="html3.html">Info</a>
+  &nbsp;|&nbsp; GLUT · Ayoung Chon 2025
+</div>
+
+<script>
+// 도파민 점수 → 별점 계산
+function calcStars(d) {
+  const axes = ['caption','sound','frame','rhythm','direction'];
+  const score = axes.filter(a => d[a]==='O').length;
+  return score; // 0~5
+}
+
+function renderStars(score, max=5) {
+  let s = '';
+  for(let i=0;i<score;i++) s += '★';
+  for(let i=score;i<max;i++) s += '<span class="stars-empty">★</span>';
+  return s;
+}
+
+// 나라별 특징 데이터
+const COUNTRY_INFO = {
+  '한국': {
+    label: '🇰🇷 한국 예능 조형 언어',
+    rows: [
+      ['방식','화면 위에 레이어를 얹음'],
+      ['핵심 도구','자막·BGM·효과음'],
+      ['자막 특징','PD가 자막으로 직접 개입. 색·크기·폰트로 감정 지시. 출연자·시청자와 동시 소통'],
+      ['BGM 방식','코믹↔서스펜스 즉각 전환. 효과음이 출연자 캐릭터를 고착시킴'],
+      ['화면 구성','클로즈업 + 반응컷 삽입'],
+      ['편집 조작','맥락 삭제 + 표정 클로즈업 + 예고편 낚시'],
+      ['인식 가능성','자막·BGM 보이면 "편집이구나" 알 수 있음'],
+      ['웹 이미지화','자막 오브젝트·말풍선·효과선'],
+    ]
+  },
+  '일본': {
+    label: '🇯🇵 일본 예능 조형 언어',
+    rows: [
+      ['방식','화면을 자막으로 덮어버림'],
+      ['핵심 도구','테로프·패널 분할화면·효과음'],
+      ['자막 특징','테로프(テロップ)가 화면 전체에 난립. 여러 폰트·말풍선이 동시에 떠있음'],
+      ['BGM 방식','효과음 밀도가 가장 높음. 말 끝마다·표정마다 즉시 삽입'],
+      ['화면 구성','메인 화면 + 패널 반응 분할칸 항상 고정'],
+      ['편집 조작','야라세(대본 지시)로 상황 자체를 설계'],
+      ['인식 가능성','보여도 정보 과잉으로 압도됨'],
+      ['웹 이미지화','테로프 말풍선·패널 분할 UI'],
+    ]
+  },
+  '글로벌': {
+    label: '🌐 글로벌 (미국·영국) 예능 조형 언어',
+    rows: [
+      ['방식','구조 자체를 바꿈'],
+      ['핵심 도구','프랭켄바이팅·컨페셔널·역할 캐스팅'],
+      ['자막 특징','자막 거의 없음. 텍스트 대신 BGM·나레이션이 감정 역할 담당'],
+      ['BGM 방식','지속적·은근하게 분위기 조성. 긴장감 BGM이 수분간 유지됨'],
+      ['화면 구성','컨페셔널 카메라(1인 독방 인터뷰)가 핵심'],
+      ['편집 조작','프랭켄바이팅으로 실제 안 한 말 제조. NDA로 출연자 반박 봉쇄'],
+      ['인식 가능성','원본 영상 없이는 조작인지 모름'],
+      ['웹 이미지화','계약서 텍스트·역할 카드·컨페셔널 테두리'],
+    ]
+  }
+};
+
+function showCountryPanel(country) {
+  const panel = document.getElementById('country-panel');
+  const info = COUNTRY_INFO[country];
+  if (!info) { panel.style.display='none'; return; }
+  panel.style.display = 'block';
+  let html = `<strong>${info.label}</strong><br><br>
+    <table><tr><th></th><th class="col-h">${info.label}</th></tr>`;
+  info.rows.forEach(r => {
+    html += `<tr><th>${r[0]}</th><td>${r[1]}</td></tr>`;
+  });
+  html += '</table>';
+  panel.innerHTML = html;
+}
+
+// 50개 데이터
+const DATA = [
+  {id:1,title:"무한도전",img:"image1.jpg",genre:"리얼버라이어티",country:"한국",broadcaster:"MBC",year:2005,rating:"12세",desc:"PD 자막이 출연자·시청자와 소통하는 독립 언어로 작동. 해골·말풍선·궁서체 등 자막 자체가 콘텐츠",layer:"해골 자막·말풍선 레이어",caption:"O",sound:"O",frame:"X",rhythm:"O",direction:"X",selected:"선정"},
+  {id:2,title:"런닝맨",img:"image2.jpg",genre:"리얼버라이어티",country:"한국",broadcaster:"SBS",year:2010,rating:"15세",desc:"미션 서스펜스 BGM + 긴장·코믹 이중 효과음 + 명찰 뜯기 클로즈업의 반복 리듬",layer:"명찰 클로즈업·효과음 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:3,title:"1박2일",img:"image3.jpg",genre:"리얼버라이어티",country:"한국",broadcaster:"KBS2",year:2007,rating:"전체",desc:"복불복 결과 클로즈업 + 벌칙 장면 효과음 + 예능 자막 감정 과잉 삽입",layer:"복불복 판넬 자막 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:4,title:"아는 형님",img:"image4.jpg",genre:"토크쇼",country:"한국",broadcaster:"JTBC",year:2015,rating:"15세",desc:"패널 리액션 분할화면 + 자막 효과선·폰트 변화로 웃음 포인트 지시",layer:"분할 패널 리액션 레이어",caption:"O",sound:"O",frame:"O",rhythm:"X",direction:"X",selected:"선정"},
+  {id:5,title:"놀라운 토요일",img:"image5.jpg",genre:"토크·게임",country:"한국",broadcaster:"tvN",year:2018,rating:"전체",desc:"정답 발표 클리프행어 편집 + 효과음 타이밍 설계 + 틀릴 때 충격 자막",layer:"정답 공개 순간 자막 레이어",caption:"O",sound:"O",frame:"X",rhythm:"O",direction:"X",selected:"선정"},
+  {id:6,title:"신서유기",img:"image6.jpg",genre:"리얼버라이어티",country:"한국",broadcaster:"tvN",year:2016,rating:"15세",desc:"나영석 PD 자막 개입 + 자막 유머 독립 서사 + 화면 분할 리액션",layer:"PD 자막 개입 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"O",selected:"선정"},
+  {id:7,title:"프로듀스 101",img:"image7.jpg",genre:"오디션",country:"한국",broadcaster:"Mnet",year:2016,rating:"15세",desc:"순위 공개 클로즈업 + 서스펜스 BGM 설계 + 눈물 장면 슬로우모션",layer:"순위 공개 UI 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"O",selected:"선정"},
+  {id:8,title:"쇼미더머니",img:"image8.jpg",genre:"오디션",country:"한국",broadcaster:"Mnet",year:2012,rating:"15세",desc:"힙합 비트 BGM 긴장 설계 + 디스 발언 자막 강조 + 탈락 순간 효과음",layer:"탈락 순간 효과음 레이어",caption:"O",sound:"O",frame:"X",rhythm:"O",direction:"X",selected:"선정"},
+  {id:9,title:"환승연애",img:"image9.jpg",genre:"리얼리티",country:"한국",broadcaster:"Tving",year:2021,rating:"15세",desc:"감정 유도 BGM + 출연자 표정 극단 클로즈업 + 하트 UI 자막 삽입",layer:"하트 UI·감정 BGM 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"O",selected:"선정"},
+  {id:10,title:"솔로지옥",img:"image10.jpg",genre:"리얼리티",country:"한국",broadcaster:"Netflix",year:2021,rating:"15세",desc:"신체 노출 화면 강조 + 선택 순간 클리프행어 편집 + 긴장 BGM",layer:"선택 순간 UI 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:11,title:"나는 솔로",img:"image11.jpg",genre:"리얼리티",country:"한국",broadcaster:"ENA",year:2021,rating:"15세",desc:"일반인 표정 과잉 클로즈업 + 선택 발표 서스펜스 편집 + 자막 반복 강조",layer:"선택 발표 카운트다운 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:12,title:"하트시그널",img:"image12.jpg",genre:"리얼리티",country:"한국",broadcaster:"Channel A",year:2018,rating:"15세",desc:"패널 추측 자막 삽입 + 출연자 시선·표정 클로즈업 + 스튜디오 반응 분할화면",layer:"패널 추측 자막 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:13,title:"골때리는 그녀들",img:"image13.jpg",genre:"스포츠예능",country:"한국",broadcaster:"SBS",year:2021,rating:"전체",desc:"경기 타임라인 조작 편집 + 득점 순간 효과음 과잉 + 선수 표정 클로즈업",layer:"득점 순간 타임라인 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:14,title:"미운우리새끼",img:"image14.jpg",genre:"관찰예능",country:"한국",broadcaster:"SBS",year:2016,rating:"전체",desc:"자녀 행동 자막 해설 + 스튜디오 어머니 리액션 분할 + BGM 감정 주입",layer:"스튜디오 반응 분할 레이어",caption:"O",sound:"O",frame:"O",rhythm:"X",direction:"X",selected:"선정"},
+  {id:15,title:"나 혼자 산다",img:"image15.jpg",genre:"관찰예능",country:"한국",broadcaster:"MBC",year:2013,rating:"전체",desc:"일상 장면 자막 감정 과잉 삽입 + 스튜디오 패널 리액션 분할화면",layer:"일상 자막 감정 레이어",caption:"O",sound:"O",frame:"O",rhythm:"X",direction:"X",selected:"선정"},
+  {id:16,title:"아내의 맛",img:"image16.jpg",genre:"관찰예능",country:"한국",broadcaster:"TV조선",year:2018,rating:"전체",desc:"부부 갈등 BGM 강화 + 자막 감탄사 삽입 + 클로즈업 감정 과잉",layer:"부부 갈등 BGM 레이어",caption:"X",sound:"O",frame:"O",rhythm:"X",direction:"O",selected:"선정"},
+  {id:17,title:"전참시",img:"image17.jpg",genre:"관찰예능",country:"한국",broadcaster:"MBC",year:2018,rating:"전체",desc:"연예인 일상 자막 해설 + 스튜디오 게스트 반응 분할 + 감동 BGM",layer:"스튜디오 반응 분할 레이어",caption:"O",sound:"O",frame:"O",rhythm:"X",direction:"X",selected:"선정"},
+  {id:18,title:"복면가왕",img:"image18.jpg",genre:"음악예능",country:"한국",broadcaster:"MBC",year:2015,rating:"전체",desc:"정체 공개 클리프행어 편집 + 패널 추측 자막 + 정체 공개 효과음",layer:"정체 공개 드라마틱 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:19,title:"수요미식회",img:"image19.jpg",genre:"먹방·토크",country:"한국",broadcaster:"tvN",year:2015,rating:"전체",desc:"음식 클로즈업 ASMR 연출 + 먹는 표정 극단 클로즈업 + 감탄 자막 삽입",layer:"음식 클로즈업 ASMR 레이어",caption:"O",sound:"O",frame:"O",rhythm:"X",direction:"X",selected:"선정"},
+  {id:20,title:"피의 게임",img:"image20.jpg",genre:"심리게임",country:"한국",broadcaster:"Wavve",year:2022,rating:"15세",desc:"배신 순간 슬로우모션 + 서스펜스 BGM 연속 설계 + 참가자 표정 클로즈업",layer:"배신 순간 슬로우모션 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"O",selected:"선정"},
+  {id:21,title:"ダウンタウン",img:"image21.jpg",genre:"버라이어티",country:"일본",broadcaster:"Fuji TV",year:1991,rating:"G",desc:"테로프 자막 밀도 최고 수준 + 효과음 고밀도 + 패널 리액션 분할 정착의 원형",layer:"테로프 난립 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:22,title:"笑ってはいけない",img:"image22.jpg",genre:"버라이어티",country:"일본",broadcaster:"NTV",year:2006,rating:"G",desc:"벌칙 장면 슬로우모션 + 리액션 클로즈업 + 충격 효과음 타이밍 설계",layer:"벌칙 순간 클로즈업 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:23,title:"ア메トーーク！",img:"image23.jpg",genre:"토크버라이어티",country:"일본",broadcaster:"TV Asahi",year:2003,rating:"G",desc:"테마별 출연자 소개 자막 + 패널 공감 리액션 분할 + 인포그래픽 자막",layer:"인포그래픽 자막 레이어",caption:"O",sound:"O",frame:"O",rhythm:"X",direction:"X",selected:"선정"},
+  {id:24,title:"しゃべくり007",img:"image24.jpg",genre:"토크버라이어티",country:"일본",broadcaster:"NTV",year:2008,rating:"G",desc:"게스트 반응 클로즈업 + 충격 발언 강조 자막 + 효과음 즉시 삽입",layer:"충격 발언 강조 자막 레이어",caption:"O",sound:"O",frame:"O",rhythm:"X",direction:"X",selected:"선정"},
+  {id:25,title:"マツコの知らない世界",img:"image25.jpg",genre:"정보버라이어티",country:"일본",broadcaster:"TBS",year:2015,rating:"G",desc:"인포그래픽 자막 과잉 + 게스트 반응 분할화면 + BGM 감정 삽입",layer:"인포그래픽 테로프 레이어",caption:"O",sound:"O",frame:"O",rhythm:"X",direction:"X",selected:"선정"},
+  {id:26,title:"これが日本人だ！",img:"image26.jpg",genre:"다큐버라이어티",country:"일본",broadcaster:"TBS",year:2012,rating:"G",desc:"외국인 반응 클로즈업 + 강조 자막 폭발 + 스튜디오 리액션 분할",layer:"외국인 반응 클로즈업 레이어",caption:"O",sound:"O",frame:"O",rhythm:"X",direction:"X",selected:"선정"},
+  {id:27,title:"テラスハウス",img:"image27.jpg",genre:"리얼리티",country:"일본",broadcaster:"Fuji TV/Netflix",year:2012,rating:"15",desc:"스튜디오 패널 코멘트 삽입 + 감정 음악 설계 + 출연자 행동 재해석 자막",layer:"패널 코멘트 삽입 레이어",caption:"O",sound:"O",frame:"O",rhythm:"X",direction:"O",selected:"선정"},
+  {id:28,title:"月曜から夜ふかし",img:"image28.jpg",genre:"정보버라이어티",country:"일본",broadcaster:"NTV",year:2012,rating:"G",desc:"거리 인터뷰 반응 자막 강조 + 충격 효과음 + 스튜디오 리액션 분할",layer:"거리 인터뷰 자막 레이어",caption:"O",sound:"O",frame:"O",rhythm:"X",direction:"X",selected:"선정"},
+  {id:29,title:"愛言葉",img:"image29.jpg",genre:"버라이어티",country:"일본",broadcaster:"Fuji TV",year:2018,rating:"G",desc:"리액션 타이밍 자막 + 감탄사 효과음 + 분할화면 패널 반응 과잉",layer:"감탄사 효과음 레이어",caption:"O",sound:"O",frame:"O",rhythm:"X",direction:"X",selected:"선정"},
+  {id:30,title:"世界の果てまでイッテQ！",img:"image30.jpg",genre:"여행버라이어티",country:"일본",broadcaster:"TV Asahi",year:2012,rating:"G",desc:"로케이션 정보 테로프 과잉 + 반응 클로즈업 + BGM 감성 설계",layer:"로케이션 정보 테로프 레이어",caption:"O",sound:"O",frame:"O",rhythm:"X",direction:"X",selected:"선정"},
+  {id:31,title:"The Bachelor",img:"image31.jpg",genre:"연애리얼리티",country:"미국",broadcaster:"ABC",year:2002,rating:"TV-14",desc:"장미 세레머니 클리프행어 편집 + 빌런 BGM 삽입 + 컨페셔널 발언 유도",layer:"장미 세레머니 서스펜스 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"O",selected:"선정"},
+  {id:32,title:"Survivor",img:"image32.jpg",genre:"서바이벌",country:"미국",broadcaster:"CBS",year:2000,rating:"TV-PG",desc:"투표 카운트다운 BGM + 부족 회의 클로즈업 + 결과 공개 편집 타이밍",layer:"투표 카운트다운 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"O",selected:"선정"},
+  {id:33,title:"RuPaul's Drag Race",img:"image33.jpg",genre:"오디션",country:"미국",broadcaster:"VH1",year:2009,rating:"TV-14",desc:"립싱크 배틀 BGM 설계 + 판정 클리프행어 + 드래그 비주얼 과잉 연출",layer:"립싱크 배틀 비주얼 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"O",selected:"선정"},
+  {id:34,title:"Love Island USA",img:"image34.jpg",genre:"연애리얼리티",country:"미국",broadcaster:"Peacock",year:2019,rating:"TV-14",desc:"커플링 서스펜스 BGM + 컨페셔널 카메라 감정 유도 + 투표 UI 긴장",layer:"커플링 서스펜스 UI 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"O",selected:"선정"},
+  {id:35,title:"American Idol",img:"image35.jpg",genre:"오디션",country:"미국",broadcaster:"Fox",year:2002,rating:"TV-PG",desc:"합격·탈락 봉투 클리프행어 + 심사위원 리액션 클로즈업 + 충격 BGM",layer:"심사위원 리액션 클로즈업 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:36,title:"The Voice",img:"image36.jpg",genre:"오디션",country:"미국",broadcaster:"NBC",year:2011,rating:"TV-PG",desc:"의자 회전 클리프행어 편집 + 블라인드 오디션 서스펜스 BGM + 코치 반응",layer:"의자 회전 클리프행어 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:37,title:"Big Brother",img:"image37.jpg",genre:"리얼리티",country:"미국",broadcaster:"CBS",year:2000,rating:"TV-14",desc:"고백 캠 컨페셔널 연출 + 추방 투표 서스펜스 + 감시 카메라 UI",layer:"고백 캠 UI 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"O",selected:"선정"},
+  {id:38,title:"The Circle",img:"image38.jpg",genre:"리얼리티",country:"미국",broadcaster:"Netflix",year:2020,rating:"TV-14",desc:"SNS 프로필 UI 도파민 설계 + 차단 순간 편집 + 랭킹 공개 클리프행어",layer:"SNS 랭킹 UI 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:39,title:"Love Is Blind",img:"image39.jpg",genre:"연애리얼리티",country:"미국",broadcaster:"Netflix",year:2020,rating:"TV-14",desc:"파드 공간 고립 연출 + 프로포즈 클리프행어 + 첫 만남 공개 편집 타이밍",layer:"파드 첫 만남 공개 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"O",selected:"선정"},
+  {id:40,title:"Too Hot to Handle",img:"image40.jpg",genre:"연애리얼리티",country:"미국",broadcaster:"Netflix",year:2020,rating:"TV-MA",desc:"규칙 위반 경고 UI + 벌금 차감 클로즈업 + 위반 순간 효과음 설계",layer:"벌금 차감 UI 레이어",caption:"O",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:41,title:"Love Island UK",img:"image41.jpg",genre:"연애리얼리티",country:"영국",broadcaster:"ITV2",year:2015,rating:"TV-14",desc:"커플링 발표 서스펜스 BGM + 문자 공개 클로즈업 + 나레이션 감정 유도",layer:"문자 공개 UI 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"O",selected:"선정"},
+  {id:42,title:"The X Factor",img:"image42.jpg",genre:"오디션",country:"영국",broadcaster:"ITV",year:2004,rating:"PG",desc:"심사 발표 BGM 클라이맥스 + 심사위원 갈등 편집 + 탈락자 반응 클로즈업",layer:"심사 발표 클라이맥스 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:43,title:"Great British Bake Off",img:"image43.jpg",genre:"요리경쟁",country:"영국",broadcaster:"BBC/C4",year:2010,rating:"G",desc:"결과 공개 클리프행어 편집 + 감성 BGM 대비 활용 + 실패 장면 클로즈업",layer:"결과 공개 클리프행어 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:44,title:"I'm a Celebrity...",img:"image44.jpg",genre:"서바이벌",country:"영국",broadcaster:"ITV",year:2002,rating:"PG",desc:"시련 도전 BGM 긴장 + 벌칙 반응 클로즈업 + 시청자 투표 서스펜스",layer:"시련 도전 긴장 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:45,title:"The Apprentice UK",img:"image45.jpg",genre:"비즈니스",country:"영국",broadcaster:"BBC",year:2005,rating:"PG",desc:"해고 순간 편집 타이밍 + 회의실 클로즈업 + 서스펜스 BGM 설계",layer:"해고 순간 편집 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"O",selected:"선정"},
+  {id:46,title:"TikTok FYP",img:null,genre:"숏폼플랫폼",country:"글로벌",broadcaster:"ByteDance",year:2016,rating:"전체",desc:"풀스크린 몰입 + 자동재생 무한루프 + 가변보상 피드 설계 + 사운드 자동재생",layer:"무한스크롤 피드 UI 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"O",selected:"선정"},
+  {id:47,title:"YouTube Shorts",img:null,genre:"숏폼플랫폼",country:"글로벌",broadcaster:"Google",year:2020,rating:"전체",desc:"세로 풀스크린 + 자동재생 루프 + 조회수·좋아요 숫자 실시간 표시",layer:"조회수 실시간 UI 레이어",caption:"X",sound:"O",frame:"O",rhythm:"O",direction:"X",selected:"선정"},
+  {id:48,title:"Instagram Reels",img:null,genre:"숏폼플랫폼",country:"글로벌",broadcaster:"Meta",year:2020,rating:"전체",desc:"음악 자동재생 + 하트 애니메이션 + 좋아요 즉각 피드백 시각화",layer:"하트 즉각 피드백 UI 레이어",caption:"X",sound:"O",frame:"O",rhythm:"X",direction:"X",selected:"선정"},
+  {id:49,title:"다큐 3일",img:null,genre:"다큐",country:"한국",broadcaster:"KBS",year:2007,rating:"전체",desc:"[대조군] 자막 최소화·내레이션 중심·클로즈업 자제 — 조형 도구 억제 포맷",layer:"조형 언어 없는 화면 레이어",caption:"X",sound:"X",frame:"X",rhythm:"X",direction:"X",selected:"미선정(대조군)"},
+  {id:50,title:"Planet Earth",img:null,genre:"다큐",country:"영국",broadcaster:"BBC",year:2006,rating:"G",desc:"[대조군] 자연 다큐 — 음악만 사용, 자막 없음, 편집 조작 없음. 비교 기준점",layer:"자연음+음악 레이어",caption:"X",sound:"O",frame:"X",rhythm:"X",direction:"X",selected:"미선정(대조군)"},
+];
+
+const AXES = ['caption','sound','frame','rhythm','direction'];
+const AXIS_KR = {caption:'자막',sound:'사운드',frame:'화면구성',rhythm:'편집리듬',direction:'연출설계'};
+
+let currentData = [...DATA];
+let currentFilter = 'all';
+
+function getCountryGroup(c) {
+  if (c === '미국' || c === '영국' || c === '글로벌') return '글로벌';
+  return c;
+}
+
+function buildCard(d) {
+  const stars = calcStars(d);
+  const isSelected = d.selected.includes('선정') && !d.selected.includes('미선정');
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.country = getCountryGroup(d.country);
+  card.dataset.selected = isSelected ? 'y' : 'n';
+  card.dataset.stars = stars;
+  card.dataset.year = d.year;
+  card.dataset.title = d.title;
+  card.dataset.id = d.id;
+
+  const imgHtml = d.img
+    ? `<img src="${d.img}" alt="${d.title}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=card-img-placeholder>${d.id.toString().padStart(2,'0')}</div>'">`
+    : `<div class="card-img-placeholder">${d.id.toString().padStart(2,'0')}</div>`;
+
+  const badgeClass = isSelected ? 'badge-selected' : 'badge-control';
+  const badgeText = isSelected ? '선정' : '대조군';
+
+  card.innerHTML = `
+    <div class="card-img-wrap">
+      ${imgHtml}
+      <span class="card-duration">${d.year}</span>
+    </div>
+    <a class="card-title">${d.title}</a>
+    <div class="card-meta">
+      <div class="stars">${renderStars(stars)}</div>
+      <div class="rating-count">도파민 지수 ${stars}/5 · ${stars * 20}% ratings</div>
+      Added: ${d.year}<br>
+      From: <span class="from">${d.broadcaster}</span><br>
+      Genre: ${d.genre} · ${d.rating}<br>
+      <span class="dopamine-badge ${badgeClass}">${badgeText}</span>
+    </div>
+  `;
+
+  card.addEventListener('click', () => openModal(d));
+  return card;
+}
+
+function openModal(d) {
+  const stars = calcStars(d);
+  const isSelected = d.selected.includes('선정') && !d.selected.includes('미선정');
+  const imgHtml = d.img
+    ? `<img id="modal-img" src="${d.img}" alt="${d.title}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border:1px solid #ccc;margin-bottom:12px" onerror="this.style.background='#ddd'">`
+    : `<div id="modal-img" style="width:100%;aspect-ratio:16/9;background:#e8e8e8;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;margin-bottom:12px;border:1px solid #ccc">${d.id.toString().padStart(2,'0')}</div>`;
+
+  const axesHtml = AXES.map(a =>
+    `<span class="axis-pill ${d[a]==='O'?'axis-on':'axis-off'}">${AXIS_KR[a]} ${d[a]}</span>`
+  ).join('');
+
+  document.getElementById('modal-header-title').textContent = d.title;
+  document.getElementById('modal-body').innerHTML = `
+    ${imgHtml}
+    <div class="modal-title">${d.title}</div>
+    <div class="modal-meta-row">${d.genre} · ${d.broadcaster} · ${d.year} · ${d.rating} · ${getCountryGroup(d.country)}</div>
+    <div class="modal-stars">${renderStars(stars)}</div>
+    <div style="font-size:11px;color:#666;margin-bottom:8px">도파민 지수 ${stars}/5 · ${stars*20}% · ${isSelected?'<span style="color:#c00">선정 콘텐츠</span>':'대조군'}</div>
+    <div class="modal-section">핵심 도파민 조형 언어</div>
+    <div class="modal-text">${d.desc}</div>
+    <div class="modal-section">도파민 5축 분석</div>
+    <div class="axes-row">${axesHtml}</div>
+    <div class="modal-section">이미지화 레이어</div>
+    <div class="modal-text">${d.layer}</div>
+  `;
+  document.getElementById('modal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal')) closeModal();
+});
+
+function renderGrid(data) {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  data.forEach(d => grid.appendChild(buildCard(d)));
+  document.getElementById('count-display').textContent =
+    `Videos 1–${data.length} of ${data.length}`;
+}
+
+function filterData(f) {
+  currentFilter = f;
+  if (f === 'all') return [...DATA];
+  if (f === 'selected') return DATA.filter(d => d.selected.includes('선정') && !d.selected.includes('미선정'));
+  if (f === '글로벌') return DATA.filter(d => ['미국','영국','글로벌'].includes(d.country));
+  return DATA.filter(d => d.country === f);
+}
+
+function setTab(el, f) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const data = filterData(f);
+
+  // 나라별 특징 패널
+  if (f === '한국' || f === '일본' || f === '글로벌') {
+    showCountryPanel(f);
+  } else {
+    document.getElementById('country-panel').style.display = 'none';
+  }
+
+  const titles = {
+    all:'Most Viewed — 도파민 조형 언어 아카이브',
+    한국:'한국 예능 — 자막·BGM·효과음의 레이어',
+    일본:'일본 예능 — 테로프·분할화면의 과잉',
+    글로벌:'글로벌 (미국·영국) — 구조를 바꾸는 편집',
+    selected:'선정 콘텐츠 — 도파민 조형 언어 과잉'
+  };
+  document.getElementById('section-title').textContent = titles[f] || '';
+  renderGrid(data);
+}
+
+function sortCards(by) {
+  document.querySelectorAll('.filter-link').forEach(l => l.classList.remove('active'));
+  event.target.classList.add('active');
+  const data = filterData(currentFilter);
+  if (by === 'stars') data.sort((a,b) => calcStars(b)-calcStars(a));
+  else if (by === 'year') data.sort((a,b) => a.year-b.year);
+  else if (by === 'title') data.sort((a,b) => a.title.localeCompare(b.title, 'ko'));
+  else data.sort((a,b) => a.id-b.id);
+  renderGrid(data);
+}
+
+function doSearch() {
+  const q = document.getElementById('search-input').value.toLowerCase().trim();
+  if (!q) { renderGrid(filterData(currentFilter)); return; }
+  const filtered = DATA.filter(d =>
+    d.title.toLowerCase().includes(q) ||
+    d.genre.toLowerCase().includes(q) ||
+    d.broadcaster.toLowerCase().includes(q) ||
+    d.desc.toLowerCase().includes(q)
+  );
+  renderGrid(filtered);
+  document.getElementById('section-title').textContent = `"${q}" 검색 결과`;
+}
+
+document.getElementById('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+// 초기 렌더
+renderGrid(DATA);
+</script>
+</body>
+</html>
