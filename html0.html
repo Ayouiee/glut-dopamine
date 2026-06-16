@@ -1,1 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>GLUT — The Architecture of Digital Dopamine</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #fff;
+  font-family: 'Times New Roman', Times, serif;
+  color: #000;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+#topnav {
+  position: fixed;
+  top: 8px; right: 16px;
+  display: flex; gap: 12px;
+  font-size: 11px; z-index: 999;
+}
+#topnav a { color: #00f; text-decoration: none; }
+#topnav a:hover { text-decoration: underline; }
+
+#tilted-wrap {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+}
+
+#rotated-info {
+  position: fixed;
+  top: 8px;
+  left: 16px;
+  writing-mode: horizontal-tb;
+  transform: none;
+  font-size: 11px;
+  color: #00f;
+  line-height: 1;
+  white-space: nowrap;
+  letter-spacing: 0;
+}
+
+#project-title {
+  position: absolute;
+  top: 680px;
+  left: 56px;
+  font-size: 11px;
+  color: #00f;
+  transform: rotate(-9deg);
+  transform-origin: left center;
+  white-space: nowrap;
+}
+
+#header-row {
+  position: absolute;
+  top: 700px;
+  left: 78px;
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  transform: rotate(-9deg);
+  transform-origin: left top;
+}
+
+#glut-type {
+  font-size: 80px;
+  font-weight: bold;
+  letter-spacing: 5px;
+  line-height: 0.88;
+  color: #000;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.08s;
+}
+#glut-type:hover { color: #0000ff; }
+
+#desc-block {
+  width: 500px;
+  padding-top: 12px;
+  font-size: 10px;
+  line-height: 1.65;
+  color: #000;
+  flex-shrink: 0;
+}
+#desc-block .desc-title {
+  font-size: 10px;
+  margin-bottom: 7px;
+}
+#desc-block p { margin-bottom: 5px; }
+</style>
+</head>
+<body>
+
+<div id="topnav">
+  <a href="html1.html">Noise</a>
+  <a href="html2.html">Face</a>
+  <a href="html3.html">Info</a>
+  <a href="html4.html">Archive</a>
+  <a href="javascript:window.print()">Print</a>
+</div>
+
+<div id="tilted-wrap">
+
+  <div id="rotated-info">Research Design Studio(1)　　Professor. Yuseon Park</div>
+
+  <div id="project-title">Glut: The Architecture of Digital Dopamine</div>
+
+  <div id="header-row">
+    <a id="glut-type" href="html1.html">GLUT</a>
+    <div id="desc-block">
+      <div class="desc-title">Glut: The Architecture of Digital Dopamine</div>
+      <p>프로젝트 'Glut'은 비난하면서도 다음 화를 클릭하고, 지치면서도 손을 멈추지 못하는 현대인의 지독한 역설에서 시작된 인터랙티브 아카이브다.</p>
+      <p>Glut은 우리가 '중독'이라 치부해온 현상이 사실은 자막의 색상, 사운드의 파동, 찰나의 편집 리듬 같은 치밀하게 설계된 '도파민 조형 언어'에 의한 구조적 결과물임을 해부한다.</p>
+      <p>사용자가 새로고침을 반복할수록 화면에는 전 세계 예능 콘텐츠에서 추출된 시각적 파편들이 무한히 증식하며, 종국에는 너무 많아서 오히려 아무것도 보이지 않는 (Glut) 혼돈의 상태에 이르게 된다.</p>
+      <p>사용자는 이 통제 불능의 도파민 덩어리를 직접 아카이빙함으로써 자극의 홍수 속에 놓인 자신의 위치를 확인하고, 시선을 점유하기 위해 설계된 미디어의 조형적 메커니즘을 감각적으로 목격하게 된다.</p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
 
